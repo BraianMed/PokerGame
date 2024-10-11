@@ -4,7 +4,10 @@ public class Carta {
     private CartaValor valor;
     private Pinta pinta;
 
-
+    public Carta(CartaValor valor,Pinta pinta){
+        this.valor = valor;
+        this.pinta = pinta;
+    }
     public CartaValor getValor() {
         return valor;
     }
