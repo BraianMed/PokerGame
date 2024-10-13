@@ -23,4 +23,9 @@ public class Carta {
     public void setValor(CartaValor valor) {
         this.valor = valor;
     }
+
+    @Override
+    public String toString() {
+        return valor + " de " + pinta;
+    }
 }

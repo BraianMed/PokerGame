@@ -17,21 +17,34 @@ public class JuegoPoker {
         this.bote = new Bote();
         cartasComunitarias = new ArrayList<>();
     }
+    public void ingresarJugadores(){
 
+    }
     public void repartirCartas(){
         for (Jugador jugador : jugadores){
             baraja.repartirCarta(jugador);
         }
     }
-    public void iniciarJuego(){
-        repartirCartas();
+    public void repartirFichas(int cantidad){
+        for (Jugador jugador : jugadores){
+            jugador.recibirFichas(cantidad);
+        }
     }
-    public void reiniciarJuego(){
-
+    public void iniciarJuego(int fichasIniciales){
+        repartirCartas();
+        repartirFichas(fichasIniciales);
+    }
+    public void reiniciarJuego(int fichasIniciales){
+        for (Jugador jugador : jugadores){
+            jugador.reiniciame();
+        }
+        iniciarJuego(fichasIniciales);
     }
     public void repartirComunitarias(){
         if (etapa == 0){
-            baraja.repartirCarta(cartasComunitarias);
+            for (int i = 0; i < 3; i++) {
+                baraja.repartirCarta(cartasComunitarias);
+            }
         }
         else if (etapa == 1){
             for (int i = 0; i < 2; i++) {
