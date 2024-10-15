@@ -1,6 +1,6 @@
 package ar.edu.unlu.modelo;
 
-public class Carta {
+public class Carta implements Comparable<Carta>{
     private CartaValor valor;
     private Pinta pinta;
 
@@ -27,5 +27,10 @@ public class Carta {
     @Override
     public String toString() {
         return valor + " de " + pinta;
+    }
+
+    @Override
+    public int compareTo(Carta carta) {
+        return this.valor.compareTo(carta.valor);
     }
 }

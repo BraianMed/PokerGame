@@ -9,6 +9,7 @@ public class Bote implements ICalcularFichas{
     public Bote(){
         this.fichas = new ArrayList<>();
     }
+
     public void sumarFichas(Ficha ficha){
         fichas.add(ficha);
     }

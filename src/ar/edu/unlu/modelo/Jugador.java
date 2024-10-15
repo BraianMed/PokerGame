@@ -4,29 +4,31 @@ import java.util.*;
 
 public class Jugador implements ICalcularFichas {
     private String nombre;
+    private Mano mano;
+    private int numeroJugador;
     private List<Ficha> fichas;
-    private List<Carta> mano;
     private boolean enJuego;
     private List<Ficha> apuestaActual;
 
     public Jugador(List<Ficha> fichasIniciales,String nombre){
         this.nombre = nombre;
-        this.mano = new ArrayList<>();
         this.fichas = fichasIniciales;
         this.enJuego = true;
         this.apuestaActual = new ArrayList<>();
+        this.mano = new Mano();
     }
 
     public void reiniciame(){
         fichas.clear();          // Elimina todas las fichas
-        mano.clear();            // Elimina todas las cartas
         apuestaActual.clear();   // Elimina todas las apuestas
-        enJuego = true;
+        enJuego = true;          // vuelve al juego
+        mano.vaciarMano();       // vacía la mano del jugador.
     }
 
     public void recibirCarta(Carta nuevaCarta){
-            this.mano.add(nuevaCarta);
+        mano.getCartas().add(nuevaCarta);
     }
+
     public int totalFichas(){
         int sumatoria = 0;
         for(Ficha ficha : fichas){
@@ -41,7 +43,7 @@ public class Jugador implements ICalcularFichas {
         }
         Iterator<Ficha> iterador = fichas.iterator();
         int sumatoria = 0;
-        while (iterador.hasNext()) {
+        while (iterador.hasNext() && sumatoria != cantidad) {
             Ficha f = iterador.next();
             if (f.getValor() - cantidad <= 0) {
                 sumatoria += f.getValor();
@@ -52,8 +54,8 @@ public class Jugador implements ICalcularFichas {
             }
         }
     }
-    public void recibirFichas(int cantidad){
-        fichas.getFirst().setValor(fichas.getFirst().getValor() + cantidad);
+    public void recibirFichas(Ficha ficha){
+        fichas.add(ficha);
     }
     public void apostar(int cantidad,Bote bote){
         if (cantidad > totalFichas()){
@@ -61,7 +63,7 @@ public class Jugador implements ICalcularFichas {
         }
         int sumatoria = 0;
         Iterator<Ficha> iterador = fichas.iterator();
-        while (iterador.hasNext()){
+        while (iterador.hasNext() && sumatoria != cantidad){
             Ficha f = iterador.next();
             if (f.getValor() <= cantidad){
                 bote.sumarFichas(f);
@@ -84,9 +86,6 @@ public class Jugador implements ICalcularFichas {
         return nombre;
     }
 
-    public List<Carta> getMano() {
-        return mano;
-    }
 
     public List<Ficha> getFichas() {
         return fichas;
@@ -96,9 +95,6 @@ public class Jugador implements ICalcularFichas {
         this.fichas = fichas;
     }
 
-    public void setMano(List<Carta> mano) {
-        this.mano = mano;
-    }
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
@@ -110,6 +106,18 @@ public class Jugador implements ICalcularFichas {
 
     public void setEnJuego(boolean enJuego) {
         this.enJuego = enJuego;
+    }
+
+    public void setNumeroJugador(int numeroJugador) {
+        this.numeroJugador = numeroJugador;
+    }
+
+    public int getNumeroJugador() {
+        return numeroJugador;
+    }
+
+    public Mano getMano() {
+        return mano;
     }
 
     public static void main(String[] args) {
