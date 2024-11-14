@@ -5,10 +5,8 @@ public class Usuario {
     private int victorias;
     private int derrotas;
 
-    public Usuario(String nombre,int victorias,int derrotas){
+    public Usuario(String nombre){
         this.nombre = nombre;
-        this.victorias = victorias;
-        this.derrotas = derrotas;
     }
 
     public String getNombre() {
@@ -30,7 +28,12 @@ public class Usuario {
     public void setVictorias(int victorias) {
         this.victorias = victorias;
     }
-
+    public void sumarVictorias(){
+        this.victorias++;
+    }
+    public void sumarDerrotas(){
+        this.derrotas++;
+    }
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
