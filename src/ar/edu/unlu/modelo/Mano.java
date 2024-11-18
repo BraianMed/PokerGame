@@ -14,6 +14,9 @@ public class Mano implements Comparable<Mano>{
     }
 
     public Mano evaluarMano(Mano mano){
+        // defino las manos de los dos jugadores para evitar un tipoDeMano null
+        this.definirMano();
+        mano.definirMano();
         Mano ganador = new Mano();
         if (this.compareTo(mano) < 0){
             ganador = mano;
@@ -21,8 +24,8 @@ public class Mano implements Comparable<Mano>{
         else if (this.compareTo(mano) > 0){
             ganador = this;
         }
-        return ganador;
-    }
+        return ganador; // si las manos son iguales y la mano "ganador" es null, entonces se notificara que es empate.
+     }
 
     public void definirMano() {
         // comienzo verificando desde la mano más alta hacia la más baja
@@ -200,6 +203,13 @@ public class Mano implements Comparable<Mano>{
     }
 
     public boolean esColor(){
+        if (cartas == null || cartas.isEmpty()) {
+            return false;
+        }
+        Iterator<Carta> it = cartas.iterator();
+        if (!it.hasNext()) {
+            return false;
+        }
         Iterator<Carta> iterator = cartas.iterator();
         Pinta pintaInicial = iterator.next().getPinta();    // obtengo la pinta del primer elemento
         while (iterator.hasNext()){ // mientras tenga cartas
@@ -228,48 +238,169 @@ public class Mano implements Comparable<Mano>{
         tipoDeMano = null;
 
     }
+    @Override
+    public boolean equals(Object o) {
+        // Si son dos objetos con el mismo objectID entonces retorna true. (es el mismo objeto)
+        if (this == o) return true;
+        // si la mano "O" es null o el tipo estático de la instancia actual es distinto que el de "o" entonces será falso.
+        if (o == null || getClass() != o.getClass()) return false;
+        Mano mano = (Mano) o;
+        // si no, comparo que las cartas de ambas manos sean iguales al mismo tiempo que los tipoDeMano.
+        return cartas.equals(mano.cartas) && tipoDeMano.equals(mano.tipoDeMano);
+    }
 
     @Override
     public int compareTo(Mano o) {
-        // comparar el tipo de mano + cuanto vale su mano;
-        int comp = 0;
-        int j1 = 0;
-        int j2 = 0;
-        // comparo el valor de las cartas de ambos jugadores y guardo un puntaje para ambos
-        for (Carta c : cartas){
-            for (Carta c2 : o.getCartas()){
-                comp = c.getValor().compareTo(c2.getValor());
-                if (comp > 0){
-                    j1++;
-                }
-                else if (comp < 0){
-                    j2++;
-                }
-                else{
-                    j1++;
-                    j2++;
-                }
+        // comparo por el tipoDeMano y si no son iguales entonces retorno el resultado de la comparación
+        int tipoComparacion = this.tipoDeMano.compareTo(o.getTipoDeMano());
+        if (tipoComparacion != 0) return tipoComparacion;
+        // si no, comparo los valores ordinales sumados en el map, ya que los valores son los ordinales de los enum CartaValor.
+        return Integer.compare(this.valorTotalCartas(),o.valorTotalCartas());
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(cartas, tipoDeMano);
+    }
+
+    private int valorTotalCartas() {
+        if (this.tipoDeMano == TipoDeMano.PAREJA || this.tipoDeMano == TipoDeMano.DOBLE_PAREJA || this.tipoDeMano == TipoDeMano.TRIO) {
+            // Si es una pareja, doble pareja o trío, obtenemos solo el valor de las cartas más altas, ya que son tipos de manos con posibles empates...
+            return obtenerValorDeMano();
+        } else {
+            // Para el resto de manos (como Escalera, Escalera Color, etc.), suma los valores totales
+            int suma = 0;
+            for (Carta c : cartas) {
+                suma += c.getValor().ordinal();
+            }
+            return suma;
+        }
+    }
+//    private int desempate(){
+//        int suma = 0;
+//        for (Carta c : cartas) {
+//            suma += c.getValor().ordinal();
+//        }
+//        return suma;
+//    }
+
+    private int obtenerValorDeMano() {
+        // Dependiendo el tipo de mano, voy a devolver el valor más relevante
+        switch (this.tipoDeMano) {
+            case PAREJA:
+                // Devuelve el valor de la carta que forma la pareja
+                return obtenerValorDeManoPareja();
+
+            case DOBLE_PAREJA:
+                // Devuelve el valor de la carta más alta de las parejas
+                List<Carta> parejas = valorRepetidas(2); // Cartas con el mismo valor
+                return Math.max(parejas.get(0).getValor().ordinal(), parejas.get(1).getValor().ordinal());
+
+            case TRIO:
+                // Devuelve el valor de la carta que forma el trío
+                return obtenerValorDeManoTrio();
+
+            case POKER:
+                // Devuelve el valor de la carta que forma el poker
+                return obtenerValorDeManoPoker();
+
+            // incognita (?)
+            case ESCALERA:
+            case ESCALERA_COLOR:
+            case FULL_HOUSE:
+            case COLOR:
+                // Si es una mano con varias cartas en orden, devuelve la carta más alta
+                // Para una escalera o escalera color, será la carta más alta
+                return valorCartaOrdinal(0); // Devuelve la carta más alta en estos casos
+
+            default:
+                // Para otras manos, simplemente devolvemos el valor de la carta más alta
+                return valorCartaOrdinal(0); // Carta más alta si no es una pareja, trío, etc.
+        }
+    }
+
+    private int obtenerValorDeManoPareja() {
+        // Obtengo las cartas que tienen el mismo valor
+        List<Carta> pareja = valorRepetidas(2); // 2 cartas con el mismo valor
+
+        // Si encuentra una pareja entonces devuelvo el valor de una de las cartas.
+        if (!pareja.isEmpty()) {
+            return pareja.get(0).getValor().ordinal(); // Devuelve el valor de la carta de la pareja
+        }
+
+        // en caso de no encontrar nada retornara -1
+        return -1;
+    }
+
+    private int obtenerValorDeManoPoker() {
+        // Obtengo las cartas que tienen el mismo valor
+        List<Carta> poker = valorRepetidas(4); // 4 cartas con el mismo valor
+
+        // Si encuentra poker entonces devuelvo el valor de una de las cartas.
+        if (!poker.isEmpty()) {
+            return poker.get(0).getValor().ordinal(); // Devuelve el valor de la carta que forma poker
+        }
+
+        // en caso de no encontrar nada retornara -1
+        return -1;
+    }
+
+    private int obtenerValorDeManoTrio() {
+        // Obtengo las cartas que tienen el mismo valor
+        List<Carta> trio = valorRepetidas(3); // 3 cartas con el mismo valor
+
+        // Si encuentra un trio entonces devuelvo el valor de una de las cartas.
+        if (!trio.isEmpty()) {
+            return trio.get(0).getValor().ordinal(); // Devuelve el valor de la carta del trio
+        }
+
+        // en caso de no encontrar nada retornara -1
+        return -1;
+    }
+
+    private int valorCartaOrdinal(int indice) {
+        // Ordena las cartas y devuelve la carta de valor más alto según la cantidad que esté buscando
+        List<Carta> cartasOrdenadas = new ArrayList<>(this.cartas);
+        // para ordenar las cartas creo el comparador como clase anónima (como en el caso del ActionListener con ActionPerformed)
+        // lo ordeno de forma descendente.
+        Collections.sort(cartasOrdenadas, new Comparator<Carta>() {
+            @Override
+            public int compare(Carta c1, Carta c2) {
+                return c2.getValor().ordinal() - c1.getValor().ordinal();
+            }
+        });
+
+        // Si la mano tiene varias cartas iguales, seleccionamos la que corresponde a la cantidad
+        return cartasOrdenadas.get(indice).getValor().ordinal();
+    }
+
+
+    private List<Carta> valorRepetidas(int cantidad) {
+        // Busca y devuelve las cartas que tienen el mismo valor (parejas, tríos, etc.)
+        Map<CartaValor, List<Carta>> valorCartas = new HashMap<>();
+
+        // si no existe una lista asociada a la clave CartaValor entonces se le asocia una nueva lista con esas cartas.
+        for (Carta carta : this.cartas) {
+            // Verificamos si la clave (carta.getValor()) ya existe en el mapa
+            if (!valorCartas.containsKey(carta.getValor())) {
+                // Si no existe, agregamos una nueva entrada con un ArrayList vacío
+                valorCartas.put(carta.getValor(), new ArrayList<>());
+            }
+            // Agregamos la carta al ArrayList correspondiente a la clave
+            valorCartas.get(carta.getValor()).add(carta);
+        }
+
+        // Filtramos para obtener las cartas que tienen la cantidad que necesitamos (por ejemplo, 2 para una pareja)
+        // entrySet() devuelve un conjunto del tipo Map.Entry que representa una entrada del mapa, una relación clave valor.
+        // Map.Entry representa una entrada del mapa, por lo que se puede acceder al valor con getValue(), o a la clave con getKey()
+        for (Map.Entry<CartaValor, List<Carta>> entry : valorCartas.entrySet()) {
+            if (entry.getValue().size() == cantidad) {
+                return entry.getValue();
             }
         }
-        // si el tipo de mano de la instancia actual es mayor que la Mano o, y el valor de las cartas de la instancia actual supera al
-        // jugador 2 entonces la instancia actual es mejor mano
-        if (this.tipoDeMano.compareTo(o.getTipoDeMano()) > 0 && j1 > j2){
-            return 1;
-        }
-        // todo lo contrario al primer caso ganaría la mano del jugador 2
-        else if (this.tipoDeMano.compareTo(o.getTipoDeMano()) < 0 && j1 < j2){
-            return -1;
-        }
-        // si los tipos de manos son iguales entonces se evalúan los valores de sus manos.
-        else if (this.tipoDeMano == o.getTipoDeMano() && j1 > j2){
-            return 1;
-        }
-        else if (this.tipoDeMano == o.getTipoDeMano() && j1 < j2){
-            return -1;
-        }
-        // si no quiere decir que las manos son exactamente iguales
-        return 0;
+        return Collections.emptyList(); // Si no se encuentra la cantidad esperada de cartas devuelve una lista vacía inmutable.
     }
+
+
     public void agregarCarta(Carta carta){
         cartas.add(carta);
     }

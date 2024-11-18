@@ -235,6 +235,42 @@ public class ManoTest {
         assertEquals(mano1.evaluarMano(mano2),mano2);
 
     }
+
+    @Test
+    public void validarCompararManos(){
+        Carta carta1 = new Carta(CartaValor.Q, Pinta.PICA);
+        Carta carta2 = new Carta(CartaValor.DIEZ, Pinta.CORAZON);
+        Carta carta3 = new Carta(CartaValor.CINCO, Pinta.CORAZON);
+        Carta carta4 = new Carta(CartaValor.NUEVE, Pinta.TREBOL);
+        Carta carta5 = new Carta(CartaValor.A, Pinta.DIAMANTE);
+        ArrayList<Carta> cartas = new ArrayList<>();
+        cartas.add(carta1);
+        cartas.add(carta2);
+        cartas.add(carta3);
+        cartas.add(carta4);
+        cartas.add(carta5);
+        Mano mano1 = new Mano();
+        mano1.setCartas(cartas);
+        mano1.definirMano();
+
+        Carta carta10 = new Carta(CartaValor.NUEVE, Pinta.PICA);
+        Carta carta20 = new Carta(CartaValor.A, Pinta.CORAZON);
+        Carta carta30 = new Carta(CartaValor.OCHO, Pinta.CORAZON);
+        Carta carta40 = new Carta(CartaValor.SEIS, Pinta.TREBOL);
+        Carta carta50 = new Carta(CartaValor.SIETE, Pinta.DIAMANTE);
+        ArrayList<Carta> cartas2 = new ArrayList<>();
+        cartas2.add(carta10);
+        cartas2.add(carta20);
+        cartas2.add(carta30);
+        cartas2.add(carta40);
+        cartas2.add(carta50);
+        Mano mano2 = new Mano();
+        mano2.setCartas(cartas2);
+        mano2.definirMano();
+
+
+        assertEquals(mano1.evaluarMano(mano2),mano1);
+    }
 }
 
 

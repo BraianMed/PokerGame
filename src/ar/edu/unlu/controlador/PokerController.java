@@ -7,6 +7,7 @@ import ar.edu.unlu.vista.JuegoPokerGui;
 import ar.edu.unlu.vista.Ventana;
 import ar.edu.unlu.vista.VistaConsola;
 
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Array;
@@ -16,25 +17,14 @@ import java.util.Scanner;
 public class PokerController implements IObservador{
     private JuegoPoker modelo;
     private JuegoPokerGui vista;
-    private VistaConsola vistaConsola;
-    private Scanner sc;
     private int jugadoresAgregados = 0;
-//    private int turnoActual;
 
-    public PokerController(JuegoPoker modelo,VistaConsola vistaConsola){
-        this.modelo = modelo;
-        this.vistaConsola = vistaConsola;
-        sc = new Scanner(System.in);
-        modelo.agregarObservador(this);
-    }
     public PokerController(JuegoPoker modelo,JuegoPokerGui vista){
         this.modelo = modelo;
         this.vista = vista;
-        sc = new Scanner(System.in);
         vista.setControlador(this);
         modelo.agregarObservador(this);
     }
-
 
     private void solicitarCantidadJugadores() {
         vista.mostrarMensaje("Ingrese la cantidad de jugadores (2-6):");
@@ -196,28 +186,9 @@ public class PokerController implements IObservador{
         return resultado;
     }
 
-//    public void accionesJugadores(){
-//        int indiceAccionJugador = 0;
-//        Accion[] acciones = Accion.values();
-//        boolean apuestaEnCurso = true;
-//        int jugadorInicial = (modelo.getPosRepartidor() + 3) % modelo.getJugadores().size();
-//        int jugadoresRestantes = 0;
-//        while (apuestaEnCurso){
-//            for (int i = 0; i < modelo.getJugadores().size(); i++) {
-//                Jugador jugador = modelo.getJugadores().get( (jugadorInicial + i) % modelo.getJugadores().size() );
-//
-//            }
-//        }
-//    }
-
     public void reiniciarJuego(){
         modelo.reiniciarJuego();
     }
-
-    public void cerrarScanner(){
-        sc.close();
-    }
-
 
     public JuegoPoker getModelo() {
         return modelo;
@@ -245,7 +216,9 @@ public class PokerController implements IObservador{
                 vista.mostrarMensaje("Cartas repartidas a todos los jugadores.");
             }
 //            case MOSTRAR_CARTAS -> {
-//                vista.mostrarMensaje("Jugador " + jugadorTurnoController() + " sus cartas son: " + cartasTurnoController());
+//                SwingUtilities.invokeLater(() -> {
+//                    vista.mostrarMensaje("Jugador " + jugadorTurnoController() + " sus cartas son: " + cartasTurnoController().toString());
+//                });
 //            }
         }
     }

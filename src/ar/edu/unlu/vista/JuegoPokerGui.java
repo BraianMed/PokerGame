@@ -35,10 +35,13 @@ public class JuegoPokerGui{
     private String jugadorActual;
     private ArrayList<Integer> indices = new ArrayList<>();
     private int turnosTotales;
+    private int vueltas;
     private int cartasDescartadas;
     private int cantCartasDescartar;
     private boolean vieneDeDescartar;
     private boolean vieneDeApostar;
+    private int eventosPrincipales;
+    private boolean noDebenDescartar;
 
     public void iniciarVentana(){
         frame = new JFrame("Poker");
@@ -56,11 +59,14 @@ public class JuegoPokerGui{
         this.contadorDescarte = 0;
         this.turnoActual = 0;
         this.primerApostante = true;
-        this.turnosTotales = 1;
+        this.turnosTotales = 0;
+        this.vueltas = 0;
         this.cartasDescartadas = 0;
         this.cantCartasDescartar = 0;
         this.vieneDeDescartar = false;
         this.vieneDeApostar = false;
+        this.eventosPrincipales = 0;
+        this.noDebenDescartar = false;
         mostrarMensaje("Ingrese la cantidad de jugadores (2-6):");
         accionBotonEnviar();
 
@@ -222,40 +228,91 @@ public class JuegoPokerGui{
                 else if (eventoActual == Evento.MOSTRAR_CARTAS){
                     // pretendo volver a este evento cuando termine el turno de un jugador.
 
-                    String entradaLower = entrada.toLowerCase();
-                    if (entradaLower.equals("y")){
-                        turnoActual = controlador.turnoController();
-                        
-                        ArrayList<String> cartasJugadorActual = controlador.cartasTurnoController();
-                        mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " sus cartas son: " + cartasJugadorActual.toString());
-                        eventoActual = Evento.APUESTA;
-
-                        mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
-                        if (primerApostante){
-                            mostrarMensaje("IGUALAR");
-                            mostrarMensaje("SUBIR");
-                            mostrarMensaje("RETIRARSE");
-                        }
-                        else{
-                            mostrarMensaje("IGUALAR");
-                            mostrarMensaje("SUBIR");
-                            mostrarMensaje("RETIRARSE");
-                            mostrarMensaje("PASAR");
-                        }
+                    if (turnosTotales == controlador.cantJugadoresEnJuegoController()){
+                        vueltas++;
+                        turnosTotales = 0;
+                        noDebenDescartar = true;
+                    }
+                    if (vueltas == 2){
+                        mostrarMensaje("Definiendo ganadores...");
+                        eventoActual = Evento.DEFINIR_GANADORES;
                     }
                     else{
-                        mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                        String entradaLower = entrada.toLowerCase();
+                        if (entradaLower.equals("y")){
+                            turnoActual = controlador.turnoController();
+
+                            ArrayList<String> cartasJugadorActual = controlador.cartasTurnoController();
+                            mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " sus cartas son: " + cartasJugadorActual.toString());
+                            if (vieneDeDescartar){
+                                vieneDeDescartar = false;
+
+                                controlador.moverTurnoController();
+                                mostrarMensaje("Siguiente turno...");
+                                eventoActual = Evento.MOSTRAR_CARTAS;
+                                mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                            }
+                            else{
+                                eventoActual = Evento.APUESTA;
+                                mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
+                                if (primerApostante){
+                                    mostrarMensaje("IGUALAR");
+                                    mostrarMensaje("SUBIR");
+                                    mostrarMensaje("RETIRARSE");
+                                }
+                                else{
+                                    mostrarMensaje("IGUALAR");
+                                    mostrarMensaje("SUBIR");
+                                    mostrarMensaje("RETIRARSE");
+                                    mostrarMensaje("PASAR");
+                                }
+                            }
+                        }
+                        else{
+                            mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                        }
                     }
+
                 }
                 else if (eventoActual == Evento.APUESTA) {
-
                     primerApostante = false;
                     String entradaLower = entrada.toLowerCase();
                     if (entradaLower.equals("igualar")){
                         controlador.igualarController();
                         mostrarMensaje(controlador.jugadorTurnoController() + " igualo exitosamente.");
-                        eventoActual = Evento.CANT_DESCARTE;
-                        mostrarMensaje("proceso de descarte, decida cuantas cartas va a descartar: ");
+                        vieneDeApostar = true;
+
+                        if (noDebenDescartar){
+                            turnosTotales++;
+                            if (turnosTotales == controlador.cantJugadoresEnJuegoController()){
+                                eventoActual = Evento.DEFINIR_GANADORES;
+                                mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                            }
+                            else{
+                                controlador.moverTurnoController();
+                                eventoActual = Evento.APUESTA;
+                                mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
+                                if (primerApostante){
+                                    mostrarMensaje("IGUALAR");
+                                    mostrarMensaje("SUBIR");
+                                    mostrarMensaje("RETIRARSE");
+                                }
+                                else{
+                                    mostrarMensaje("IGUALAR");
+                                    mostrarMensaje("SUBIR");
+                                    mostrarMensaje("RETIRARSE");
+                                    mostrarMensaje("PASAR");
+                                }
+
+                            }
+                        }
+                        else{
+                            eventoActual = Evento.CANT_DESCARTE;
+                            cantCartasDescartar = 0;
+                            cartasDescartadas = 0;
+                            mostrarMensaje("proceso de descarte, decida cuantas cartas va a descartar: ");
+                        }
+
                     }
                     else if (entradaLower.equals("subir")){
                         String apuesta = JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]");
@@ -263,20 +320,37 @@ public class JuegoPokerGui{
                         if (apuestaEntera != -1 && controlador.validarSubir(apuestaEntera)){
                             controlador.apostarJugadorController(apuestaEntera);
                             mostrarMensaje(controlador.jugadorTurnoController() + " decidió apostar exitosamente.");
-                            if (vieneDeDescartar){
-                                eventoActual = Evento.MOSTRAR_CARTAS;
-                                controlador.moverTurnoController();
+                            vieneDeApostar = true;
+
+                            if (noDebenDescartar){
                                 turnosTotales++;
                                 if (turnosTotales == controlador.cantJugadoresEnJuegoController()){
                                     eventoActual = Evento.DEFINIR_GANADORES;
-                                    mostrarMensaje("procesando ganadores...");
+                                    mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
                                 }
                                 else{
-                                    mostrarMensaje("pasando al siguiente turno...");
+                                    controlador.moverTurnoController();
+                                    eventoActual = Evento.APUESTA;
+                                    mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
+                                    if (primerApostante){
+                                        mostrarMensaje("IGUALAR");
+                                        mostrarMensaje("SUBIR");
+                                        mostrarMensaje("RETIRARSE");
+                                    }
+                                    else{
+                                        mostrarMensaje("IGUALAR");
+                                        mostrarMensaje("SUBIR");
+                                        mostrarMensaje("RETIRARSE");
+                                        mostrarMensaje("PASAR");
+                                    }
+
                                 }
                             }
                             else{
                                 eventoActual = Evento.CANT_DESCARTE;
+
+                                cantCartasDescartar = 0;
+                                cartasDescartadas = 0;
                                 mostrarMensaje("proceso de descarte, decida cuantas cartas va a descartar: ");
                             }
                         }
@@ -287,22 +361,85 @@ public class JuegoPokerGui{
                     }
                     else if (entradaLower.equals("pasar")) {
                         mostrarMensaje(controlador.jugadorTurnoController() + " decidió pasar.");
-                        eventoActual = Evento.CANT_DESCARTE;
-                        mostrarMensaje("proceso de descarte, decida cuantas cartas va a descartar: ");
+                        vieneDeApostar = true;
 
+                        if (noDebenDescartar){
+                            turnosTotales++;
+                            if (turnosTotales == controlador.cantJugadoresEnJuegoController()){
+                                eventoActual = Evento.DEFINIR_GANADORES;
+                                mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                            }
+                            else{
+                                controlador.moverTurnoController();
+                                eventoActual = Evento.APUESTA;
+                                mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
+                                if (primerApostante){
+                                    mostrarMensaje("IGUALAR");
+                                    mostrarMensaje("SUBIR");
+                                    mostrarMensaje("RETIRARSE");
+                                }
+                                else{
+                                    mostrarMensaje("IGUALAR");
+                                    mostrarMensaje("SUBIR");
+                                    mostrarMensaje("RETIRARSE");
+                                    mostrarMensaje("PASAR");
+                                }
+
+                            }
+                        }
+                        else{
+                            eventoActual = Evento.CANT_DESCARTE;
+                            cantCartasDescartar = 0;
+                            cartasDescartadas = 0;
+                            mostrarMensaje("proceso de descarte, decida cuantas cartas va a descartar: ");
+                        }
                     }
                     else if (entradaLower.equals("retirarse")){
-                        controlador.retirarJugadorController();
                         mostrarMensaje("El jugador: " + controlador.jugadorTurnoController() + " se ha retirado del juego!");
+                        controlador.retirarJugadorController();
                         // como el jugador se retiró no se le pedirán más acciones y se seguirá con el juego.
-                        controlador.moverTurnoController();
-                        eventoActual = Evento.MOSTRAR_CARTAS;
+                        if (controlador.cantJugadoresEnJuegoController() == 1){
+                            JOptionPane.showMessageDialog(null,"El ganador indiscutido es: " + controlador.jugadorTurnoController());
+                        }
+                        else{
+                            if (noDebenDescartar){
+                                turnosTotales++;
+                                if (turnosTotales == controlador.cantJugadoresEnJuegoController()){
+                                    eventoActual = Evento.DEFINIR_GANADORES;
+                                    mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                                }
+                                else{
+                                    controlador.moverTurnoController();
+                                    eventoActual = Evento.APUESTA;
+                                    mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
+                                    if (primerApostante){
+                                        mostrarMensaje("IGUALAR");
+                                        mostrarMensaje("SUBIR");
+                                        mostrarMensaje("RETIRARSE");
+                                    }
+                                    else{
+                                        mostrarMensaje("IGUALAR");
+                                        mostrarMensaje("SUBIR");
+                                        mostrarMensaje("RETIRARSE");
+                                        mostrarMensaje("PASAR");
+                                    }
+                                }
+                            }
+                            else{
+                                controlador.moverTurnoController();
+                                eventoActual = Evento.MOSTRAR_CARTAS;
+                                cantCartasDescartar = 0;
+                                cartasDescartadas = 0;
+                            }
+
+                        }
                     }
                     else{
                         mostrarMensaje("Seleccione una opción válida por favor: ");
                     }
                 }
                 else if (eventoActual == Evento.CANT_DESCARTE){
+                    indices.clear(); // lo vacío para que otro jugador lo use.
                     int cantidadCartas = controlador.valorFichaController(entrada);
                     if (cantidadCartas != -1 && controlador.validarCantCartasDescarte(cantidadCartas)){
                         cantCartasDescartar = cantidadCartas;
@@ -311,6 +448,7 @@ public class JuegoPokerGui{
                     }
                 }
                 else if (eventoActual == Evento.INDICES_DESCARTE) {
+
                     if (cartasDescartadas < cantCartasDescartar){
                         int indiceDescarte = controlador.valorFichaController(entrada);
                         if (indiceDescarte != -1 && controlador.validarCantCartasDescarte(indiceDescarte)){
@@ -324,15 +462,24 @@ public class JuegoPokerGui{
                                 controlador.descartarCartasController(indices);
                                 vieneDeDescartar = true;
                                 eventoActual = Evento.MOSTRAR_CARTAS;
+                                turnosTotales++;
                                 mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
                             }
+                        }
+                        else{
+                            mostrarMensaje("Error al ingresar el número de carta, intente nuevamente: ");
                         }
                     }
 
                 }
                 else if (eventoActual == Evento.DEFINIR_GANADORES){
                     String ganador = controlador.ganadorController();
-                    JOptionPane.showMessageDialog(null,"El ganador indiscutido es: " + ganador);
+                    if (ganador == null){
+                        JOptionPane.showMessageDialog(null,"La partida concluyo en empate.");
+                    }
+                    else{
+                        JOptionPane.showMessageDialog(null,"El ganador indiscutido es: " + ganador);
+                    }
                 }
             }
         });

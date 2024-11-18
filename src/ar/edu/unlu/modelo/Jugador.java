@@ -4,10 +4,8 @@ import java.util.*;
 
 public class Jugador extends Usuario implements ICalcularFichas {
     private Mano mano;
-    private int numeroJugador;
     private List<Ficha> fichas;
     private boolean enJuego;
-    private boolean apuesta;
     private List<Ficha> apuestaActual;
 
     public Jugador(String nombre){
@@ -71,6 +69,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
     public void recibirFichas(Ficha ficha){
         fichas.add(ficha);
     }
+
     public void apostar(int cantidad,Bote bote){
         if (cantidad > totalFichas()){
             throw new IllegalArgumentException("No tienes suficiente fichas");
@@ -104,6 +103,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         // creo dos arreglos de valores y pintas para poder sacar uno de forma aleatoria y asígnasela al jugador que descarto.
         CartaValor[] valores = CartaValor.values();
         Pinta[] pintas = Pinta.values();
+        indices.sort(Collections.reverseOrder()); // Ordena en orden descendente
 
         for (Integer i : indices){  // recorro los índices.
             mano.getCartas().remove(i.intValue());  // remuevo las cartas del índice actual
@@ -129,6 +129,12 @@ public class Jugador extends Usuario implements ICalcularFichas {
         return resultado;
     }
 
+    public void definirManoJugador(){
+        if (!mano.getCartas().isEmpty()){
+            mano.definirMano();
+        }
+    }
+
     public List<Ficha> getFichas() {
         return fichas;
     }
@@ -143,18 +149,6 @@ public class Jugador extends Usuario implements ICalcularFichas {
 
     public void setEnJuego(boolean enJuego) {
         this.enJuego = enJuego;
-    }
-
-    public void setNumeroJugador(int numeroJugador) {
-        this.numeroJugador = numeroJugador;
-    }
-
-    public int getNumeroJugador() {
-        return numeroJugador;
-    }
-
-    public boolean isApuesta() {
-        return apuesta;
     }
 
     public Mano getMano() {

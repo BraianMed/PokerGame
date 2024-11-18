@@ -70,6 +70,7 @@ public class JuegoPoker implements IObservable{
         if (!jugadores.isEmpty()){
             for (Jugador jugador : jugadores){
                 baraja.repartirCarta(jugador);
+                jugador.definirManoJugador();
             }
             notificar(Evento.REPARTIR_CARTAS);
             return true;
@@ -81,6 +82,7 @@ public class JuegoPoker implements IObservable{
         return manejarTurnos().getNombre();
     }
     public ArrayList<String> cartasTurnoActual(){
+//        notificar(Evento.MOSTRAR_CARTAS);
         return manejarTurnos().devolverCartas();
     }
     public void repartirFichas(){
@@ -89,17 +91,6 @@ public class JuegoPoker implements IObservable{
         }
         notificar(Evento.FICHAS_REPARTIDAS);
     }
-
-//    public void iniciarJuego(){
-//        if (!jugadores.isEmpty()){
-//            if(jugadores.size() >= 2 && jugadores.size() <= 6){
-//                repartirFichas();
-//                asignarCiegas();
-//                moverRepartidor();
-//                repartirCartas();
-//            }
-//        }
-//    }
 
     public void descartarJugador(ArrayList<Integer> indices){
         jugadores.get(getTurno()).descartar(indices);
@@ -145,21 +136,18 @@ public class JuegoPoker implements IObservable{
             }
         }
     }
-    public Mano manoGanadora(){
-        Mano resultado = new Mano();
-        Iterator<Jugador> iterator = jugadores.iterator();
-        Jugador anterior = iterator.next();
-        while (iterator.hasNext()){
-            Jugador j = iterator.next();
-            resultado = j.getMano().evaluarMano(anterior.getMano());
-            anterior = j;
+    public Mano manoGanadora() {
+        Mano mejorMano = jugadores.get(0).getMano();
+        for (int i = 1; i < jugadores.size(); i++) {
+            Mano manoComparada = jugadores.get(i).getMano();
+            mejorMano = mejorMano.evaluarMano(manoComparada); // evaluamos la mejor mano entre la actual y la nueva
         }
-        return resultado;
+        return mejorMano;
     }
-
 
     public void igualarJugador(){
         jugadores.get(getTurno()).apostar(apuestaActual,bote);
+        this.apuestaActual = this.apuestaActual + apuestaActual;
     }
     public Jugador manejarTurnos(){
         return jugadores.get(getTurno());
@@ -171,6 +159,7 @@ public class JuegoPoker implements IObservable{
     public void apostarJugador(int cantidad){
         jugadores.get(getTurno()).apostar(cantidad,bote);
         this.apuestaActual = cantidad;
+//        notificar(Evento.APUESTA);
     }
 
     public void agregarJugador(String nombre){
@@ -223,8 +212,6 @@ public class JuegoPoker implements IObservable{
         this.ciegaGrande = new Ficha(ciegaGrande);
     }
 
-
-
     public int siguienteTurno(){
         this.turno = (this.turno + 1) % jugadores.size();
         return this.turno;
@@ -267,6 +254,6 @@ public class JuegoPoker implements IObservable{
     }
 
     public Jugador getJugadorTurno() {
-        return jugadores.get(turno);
+        return jugadores.get(getTurno());
     }
 }
