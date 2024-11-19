@@ -226,7 +226,6 @@ public class JuegoPokerGui{
                     }
                 }
                 else if (eventoActual == Evento.MOSTRAR_CARTAS){
-                    // pretendo volver a este evento cuando termine el turno de un jugador.
 
                     if (turnosTotales == controlador.cantJugadoresEnJuegoController()){
                         vueltas++;
@@ -255,17 +254,7 @@ public class JuegoPokerGui{
                             else{
                                 eventoActual = Evento.APUESTA;
                                 mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
-                                if (primerApostante){
-                                    mostrarMensaje("IGUALAR");
-                                    mostrarMensaje("SUBIR");
-                                    mostrarMensaje("RETIRARSE");
-                                }
-                                else{
-                                    mostrarMensaje("IGUALAR");
-                                    mostrarMensaje("SUBIR");
-                                    mostrarMensaje("RETIRARSE");
-                                    mostrarMensaje("PASAR");
-                                }
+                                menuApuestas(primerApostante);
                             }
                         }
                         else{
@@ -292,18 +281,7 @@ public class JuegoPokerGui{
                                 controlador.moverTurnoController();
                                 eventoActual = Evento.APUESTA;
                                 mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
-                                if (primerApostante){
-                                    mostrarMensaje("IGUALAR");
-                                    mostrarMensaje("SUBIR");
-                                    mostrarMensaje("RETIRARSE");
-                                }
-                                else{
-                                    mostrarMensaje("IGUALAR");
-                                    mostrarMensaje("SUBIR");
-                                    mostrarMensaje("RETIRARSE");
-                                    mostrarMensaje("PASAR");
-                                }
-
+                                menuApuestas(primerApostante);
                             }
                         }
                         else{
@@ -332,17 +310,7 @@ public class JuegoPokerGui{
                                     controlador.moverTurnoController();
                                     eventoActual = Evento.APUESTA;
                                     mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
-                                    if (primerApostante){
-                                        mostrarMensaje("IGUALAR");
-                                        mostrarMensaje("SUBIR");
-                                        mostrarMensaje("RETIRARSE");
-                                    }
-                                    else{
-                                        mostrarMensaje("IGUALAR");
-                                        mostrarMensaje("SUBIR");
-                                        mostrarMensaje("RETIRARSE");
-                                        mostrarMensaje("PASAR");
-                                    }
+                                    menuApuestas(primerApostante);
 
                                 }
                             }
@@ -373,18 +341,7 @@ public class JuegoPokerGui{
                                 controlador.moverTurnoController();
                                 eventoActual = Evento.APUESTA;
                                 mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
-                                if (primerApostante){
-                                    mostrarMensaje("IGUALAR");
-                                    mostrarMensaje("SUBIR");
-                                    mostrarMensaje("RETIRARSE");
-                                }
-                                else{
-                                    mostrarMensaje("IGUALAR");
-                                    mostrarMensaje("SUBIR");
-                                    mostrarMensaje("RETIRARSE");
-                                    mostrarMensaje("PASAR");
-                                }
-
+                                menuApuestas(primerApostante);
                             }
                         }
                         else{
@@ -412,17 +369,7 @@ public class JuegoPokerGui{
                                     controlador.moverTurnoController();
                                     eventoActual = Evento.APUESTA;
                                     mostrarMensaje("Jugador: " + controlador.jugadorTurnoController() + " tiene " + controlador.fichasJugadorActual() + " fichas, ingrese su acción: ");
-                                    if (primerApostante){
-                                        mostrarMensaje("IGUALAR");
-                                        mostrarMensaje("SUBIR");
-                                        mostrarMensaje("RETIRARSE");
-                                    }
-                                    else{
-                                        mostrarMensaje("IGUALAR");
-                                        mostrarMensaje("SUBIR");
-                                        mostrarMensaje("RETIRARSE");
-                                        mostrarMensaje("PASAR");
-                                    }
+                                    menuApuestas(primerApostante);
                                 }
                             }
                             else{
@@ -488,6 +435,20 @@ public class JuegoPokerGui{
 
     public void setEnviarListener(ActionListener listener) {
         botonEnviar.addActionListener(listener);
+    }
+
+    public void menuApuestas(boolean primerApostante){
+        if (primerApostante){
+            mostrarMensaje("IGUALAR");
+            mostrarMensaje("SUBIR");
+            mostrarMensaje("RETIRARSE");
+        }
+        else{
+            mostrarMensaje("IGUALAR");
+            mostrarMensaje("SUBIR");
+            mostrarMensaje("RETIRARSE");
+            mostrarMensaje("PASAR");
+        }
     }
 
     public String obtenerTextoIngresado() {

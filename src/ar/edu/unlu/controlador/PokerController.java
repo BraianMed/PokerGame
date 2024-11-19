@@ -133,7 +133,7 @@ public class PokerController implements IObservador{
         modelo.retirarJugador();
     }
     public int fichasJugadorActual(){
-        return modelo.getJugadores().get(turnoController()).totalFichas();
+        return modelo.manejarTurnos().totalFichas();
     }
 
     public void asignarFichasIniciales(ArrayList<Integer> fichasIniciales){

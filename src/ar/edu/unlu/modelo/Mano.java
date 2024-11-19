@@ -263,8 +263,8 @@ public class Mano implements Comparable<Mano>{
     }
 
     private int valorTotalCartas() {
-        if (this.tipoDeMano == TipoDeMano.PAREJA || this.tipoDeMano == TipoDeMano.DOBLE_PAREJA || this.tipoDeMano == TipoDeMano.TRIO) {
-            // Si es una pareja, doble pareja o trío, obtenemos solo el valor de las cartas más altas, ya que son tipos de manos con posibles empates...
+        if (this.tipoDeMano == TipoDeMano.PAREJA || this.tipoDeMano == TipoDeMano.DOBLE_PAREJA || this.tipoDeMano == TipoDeMano.TRIO || this.tipoDeMano == TipoDeMano.POKER) {
+            // Si es un tipoDeMano con cartas repetidas entonces se obtiene el valor ordinal de una de las cartas repetidas.
             return obtenerValorDeMano();
         } else {
             // Para el resto de manos (como Escalera, Escalera Color, etc.), suma los valores totales
@@ -393,8 +393,8 @@ public class Mano implements Comparable<Mano>{
         // entrySet() devuelve un conjunto del tipo Map.Entry que representa una entrada del mapa, una relación clave valor.
         // Map.Entry representa una entrada del mapa, por lo que se puede acceder al valor con getValue(), o a la clave con getKey()
         for (Map.Entry<CartaValor, List<Carta>> entry : valorCartas.entrySet()) {
-            if (entry.getValue().size() == cantidad) {
-                return entry.getValue();
+            if (entry.getValue().size() == cantidad) {  // si las cartas repetidas son igual a la cantidad
+                return entry.getValue();    // entonces retorno la lista que está en valor.
             }
         }
         return Collections.emptyList(); // Si no se encuentra la cantidad esperada de cartas devuelve una lista vacía inmutable.
