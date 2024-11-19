@@ -80,7 +80,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         // si sumatoria es igual que cantidad entonces quiere decir que ya aposto la cantidad necesaria.
         while (iterador.hasNext() && sumatoria != cantidad){
             Ficha f = iterador.next();
-            // si el valor de la ficha del jugador es menor o igual a la cantidad se suma al bote la ficha actual y se eliminan del jugador
+            // si el valor de la ficha del jugador es menor o igual a la cantidad se suma al bote la ficha actual y se eliminan del jugador.
             if (f.getValor() <= cantidad){
                 bote.sumarFichas(f);
                 sumatoria += f.getValor();
