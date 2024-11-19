@@ -267,7 +267,7 @@ public class Mano implements Comparable<Mano>{
             // Si es un tipoDeMano con cartas repetidas entonces se obtiene el valor ordinal de una de las cartas repetidas.
             return obtenerValorDeMano();
         } else {
-            // Para el resto de manos (como Escalera, Escalera Color, etc.), suma los valores totales
+            // Para el resto de manos (como Escalera, Escalera Color, etc.), suma los valores totales.
             int suma = 0;
             for (Carta c : cartas) {
                 suma += c.getValor().ordinal();
