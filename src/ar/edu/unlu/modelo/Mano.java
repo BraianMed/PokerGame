@@ -136,7 +136,7 @@ public class Mano implements Comparable<Mano>{
                 // en resultado uso "put" para agregar la clave a la tabla, y de valor va a asignarle lo que obtenga
                 // de usar getOrDefault que obtiene el valor asociado a la clave o un valor por default, se le suma 1 si fuera el caso que ya se repitió
                 // y si no estuviera repetido entonces se le suma en 1 para determinar que al menos está una vez.
-                resultado.put(valor,resultado.getOrDefault(valor,0) + 1);
+                resultado.put(valor,resultado.getOrDefault(valor,0) + 1);   // inserta en valor, el valor existente +1 o 0 por default
 
         }
         return resultado;
