@@ -52,7 +52,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         while (iterador.hasNext() && sumatoria != cantidad) {
             Ficha f = iterador.next();
             // si el valor de la ficha actual menos la cantidad requerida es menor o igual a cero entonces la borro
-            // e incremento sumatoria para ir guardando cuanto voy restando
+            // e incremento sumatoria para ir guardando cuanto voy restando.
             if (f.getValor() - cantidad <= 0) {
                 sumatoria += f.getValor();
                 iterador.remove();
