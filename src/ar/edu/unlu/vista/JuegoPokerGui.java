@@ -388,10 +388,22 @@ public class JuegoPokerGui{
                 else if (eventoActual == Evento.CANT_DESCARTE){
                     indices.clear(); // lo vacío para que otro jugador lo use.
                     int cantidadCartas = controlador.valorFichaController(entrada);
-                    if (cantidadCartas != -1 && controlador.validarCantCartasDescarte(cantidadCartas)){
-                        cantCartasDescartar = cantidadCartas;
-                        eventoActual = Evento.INDICES_DESCARTE;
-                        mostrarMensaje("Ingrese el numero de cartas a descartar: ej. carta 1, carta 2 etc...");
+                    if (cantidadCartas != -1){
+                        if (cantidadCartas == 0){
+                            mostrarMensaje("Decide no descartar ninguna carta.");
+                            vieneDeDescartar = true;
+                            eventoActual = Evento.MOSTRAR_CARTAS;
+                            turnosTotales++;
+                            mostrarMensaje("Ingrese la tecla [ y ] para poder continuar con el juego por favor...");
+                        }
+                        else if (controlador.validarCantCartasDescarte(cantidadCartas)){
+                            cantCartasDescartar = cantidadCartas;
+                            eventoActual = Evento.INDICES_DESCARTE;
+                            mostrarMensaje("Ingrese el numero de cartas a descartar: ej. carta 1, carta 2 etc...");
+                        }
+                    }
+                    else{
+                        mostrarMensaje("Error al ingresar el número de carta, intente nuevamente: ");
                     }
                 }
                 else if (eventoActual == Evento.INDICES_DESCARTE) {
