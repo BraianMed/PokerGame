@@ -11,7 +11,7 @@ import java.util.List;
 public class JuegoPoker implements IObservable{
     private List<Jugador> jugadores;
     private Bote bote;
-    private final Baraja baraja;
+    private Baraja baraja;
     private Ficha ciegaChica;
     private Ficha ciegaGrande;
     private int posRepartidor;
@@ -19,6 +19,8 @@ public class JuegoPoker implements IObservable{
     private ArrayList<IObservador> observadores;
     private int apuestaActual;
     private int turno;
+    private Jugador anfitrion;
+    private int cantFichas;
 
     public JuegoPoker(){
         this.jugadores = new ArrayList<>();
@@ -30,6 +32,28 @@ public class JuegoPoker implements IObservable{
         this.turno = 0;
         this.apuestaActual = 0;
     }
+
+    public void iniciarJuego(){
+        notificar(Evento.NOMBRE_JUGADOR);
+    }
+
+    public void configurarJuego(){
+//        System.out.println("debug");
+        notificar(Evento.CANT_FICHAS_INICIALES);
+    }
+
+    public void valorFichas(){
+        notificar(Evento.FICHAS_INICIALES);
+    }
+
+    public void errorCiega(){
+        notificar(Evento.VALOR_CIEGAS);
+    }
+
+//    public void cartasObserver(){
+//        notificar(Evento.REPARTIR_CARTAS);
+//    }
+
     public void moverRepartidor(){
         // hacemos módulo por el tamaño de la lista de jugadores para que cuando llegue al final vuelva al inicio de la lista como una cola circular
         // el resto de la división dara como resultado un número entre 0 y la cantidad de jugadores (perfecto para el índice)
@@ -38,11 +62,19 @@ public class JuegoPoker implements IObservable{
 
     public boolean asignarCiegas(){
         if (!jugadores.isEmpty()){
-            // el primero a la izquierda del repartidor es el que inicia con la ciega chica
-            int posCiegaChica = (this.posRepartidor + 1) % jugadores.size();
-            // el segundo a la izquierda del repartidor termina con la ciega grande
-            int posCiegaGrande = (this.posRepartidor + 2) % jugadores.size();
+            int posCiegaChica = 0;
+            int posCiegaGrande = 0;
 
+            if (jugadores.size() == 2) {
+                posCiegaChica = posRepartidor;
+                posCiegaGrande = (posRepartidor + 1) % jugadores.size();
+            }
+            else{
+                // el primero a la izquierda del repartidor es el que inicia con la ciega chica
+                posCiegaChica = (this.posRepartidor + 1) % jugadores.size();
+                // el segundo a la izquierda del repartidor termina con la ciega grande
+                posCiegaGrande = (this.posRepartidor + 2) % jugadores.size();
+            }
             // obtengo los jugadores de las respectivas ciegas
             Jugador jugadorCiegaChica = jugadores.get(posCiegaChica);
             Jugador jugadorCiegaGrande = jugadores.get(posCiegaGrande);
@@ -53,10 +85,11 @@ public class JuegoPoker implements IObservable{
 
             // con la información que tengo ya puedo definir el turno del jugador y la apuesta actual.
             this.turno = (posRepartidor + 3) % jugadores.size();
+            jugadores.get(this.turno).setPrimerApostante(true);
+
             this.apuestaActual = ciegaGrande.getValor();
 
-            notificar(Evento.VALOR_CIEGAS);
-
+            notificar(Evento.REPARTIR_CARTAS);
             return true;
         }
         return false;
@@ -72,7 +105,6 @@ public class JuegoPoker implements IObservable{
                 baraja.repartirCarta(jugador);
                 jugador.definirManoJugador();
             }
-            notificar(Evento.REPARTIR_CARTAS);
             return true;
         }
         return false;
@@ -162,9 +194,30 @@ public class JuegoPoker implements IObservable{
 //        notificar(Evento.APUESTA);
     }
 
-    public void agregarJugador(String nombre){
-        jugadores.add(new Jugador(nombre));
+    public Jugador agregarJugador(String nombre) {
+        int maxJugadores = 6; // Límite superior
+
+        if (jugadores.size() >= maxJugadores) {
+            System.out.println("No se pueden agregar más jugadores.");
+            return null;
+        }
+
+        Jugador actual = new Jugador(nombre);
+        if (this.anfitrion == null) {
+            this.anfitrion = actual;
+        }
+
+        jugadores.add(actual);
+//        System.out.println("Jugador agregado: " + nombre);
+
+        // Si hay al menos 2 jugadores, se notifica que puede iniciar la partida.
+        if (jugadores.size() >= 2) {
+            notificar(Evento.JUGADORES_INGRESADOS);
+        }
+//        System.out.println(actual.getNombre());
+        return actual;
     }
+
 
     public void agregarJugadores(ArrayList<String> nombres){
         for (String nombre : nombres){
@@ -199,7 +252,20 @@ public class JuegoPoker implements IObservable{
     }
 
     public void agregarFicha(int valor){
-        this.fichasIniciales.add(new Ficha(valor));
+        if (fichasIniciales.size() != this.cantFichas){
+            this.fichasIniciales.add(new Ficha(valor));
+            if (fichasIniciales.size() != this.cantFichas){
+                notificar(Evento.FICHAS_INICIALES);
+            }
+            else{
+                this.repartirFichas();
+                notificar(Evento.VALOR_CIEGAS);
+            }
+        }
+        else{
+            System.out.println("debug");
+            notificar(Evento.VALOR_CIEGAS);
+        }
     }
     public void agregarFichas(ArrayList<Integer> valores){
         for (Integer valorFicha : valores){
@@ -210,6 +276,8 @@ public class JuegoPoker implements IObservable{
     public void inicializarCiegas(int ciegaChica,int ciegaGrande){
         this.ciegaChica = new Ficha(ciegaChica);
         this.ciegaGrande = new Ficha(ciegaGrande);
+        System.out.println(this.ciegaChica.getValor());
+        System.out.println(this.ciegaGrande.getValor());
     }
 
     public int siguienteTurno(){
@@ -255,5 +323,13 @@ public class JuegoPoker implements IObservable{
 
     public Jugador getJugadorTurno() {
         return jugadores.get(getTurno());
+    }
+
+    public void setCantFichas(int cantFichas) {
+        this.cantFichas = cantFichas;
+    }
+
+    public Jugador getAnfitrion() {
+        return anfitrion;
     }
 }

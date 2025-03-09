@@ -10,7 +10,12 @@ public class PokerMain {
         JuegoPoker modelo = new JuegoPoker();
 
         PokerController controlador = new PokerController(modelo,vista);
-        vista.iniciarVentana();
+
+        JuegoPokerGui vista2 = new JuegoPokerGui();
+        PokerController controlador2 = new PokerController(modelo,vista2);
+
+        modelo.iniciarJuego();
+//        vista.iniciarVentana();
 
     }
 }

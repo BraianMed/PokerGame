@@ -4,20 +4,16 @@ import ar.edu.unlu.modelo.Evento;
 import ar.edu.unlu.modelo.JuegoPoker;
 import ar.edu.unlu.modelo.Jugador;
 import ar.edu.unlu.vista.JuegoPokerGui;
-import ar.edu.unlu.vista.Ventana;
-import ar.edu.unlu.vista.VistaConsola;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class PokerController implements IObservador{
     private JuegoPoker modelo;
     private JuegoPokerGui vista;
     private int jugadoresAgregados = 0;
+    private Jugador jugadorAsociado;
+    private String entrada;
 
     public PokerController(JuegoPoker modelo,JuegoPokerGui vista){
         this.modelo = modelo;
@@ -100,26 +96,69 @@ public class PokerController implements IObservador{
         return modelo.cartasTurnoActual();
     }
 
-    public int fichasInicialesController(String fichasIniciales){
-        int cantFichas = 0;
+    public void fichasInicialesController(String fichasIniciales){
         try{
-           cantFichas = Integer.parseInt(fichasIniciales);
-
+           int cantFichas = Integer.parseInt(fichasIniciales);
+           if (cantFichas <= 0 ){
+               vista.mensajeError();
+               modelo.configurarJuego();
+           }
+           else{
+               vista.mostrarMensaje("fichas ingresadas con éxito!");
+               modelo.setCantFichas(cantFichas);
+               modelo.valorFichas();
+               System.out.println("numero de fichas exitoso");
+           }
         }
         catch (Exception e){
-            vista.mostrarMensaje("Error al ingresar un tipo de dato no válido.");
+            vista.mensajeError();
+            modelo.configurarJuego();
         }
-        return cantFichas;
     }
     public int valorFichaController(String entrada){
         int valorFicha = -1;
         try {
             valorFicha = Integer.parseInt(entrada);
+            if (valorFicha <= 0 ){
+                vista.mensajeError();
+                modelo.valorFichas();
+            }
+            else{
+                vista.mostrarMensaje("ficha ingresada con éxito!");
+                modelo.agregarFicha(valorFicha);
+//                System.out.println("numero de fichas exitoso");
+            }
         }
         catch (Exception e){
-            vista.mostrarMensaje("Error al ingresar un tipo de dato no válido.");
+            vista.mensajeError();
+            modelo.valorFichas();
         }
         return valorFicha;
+    }
+    public void validarCiega(String ciegaGrande){
+        int ciega = 0;
+        try{
+            ciega = Integer.parseInt(ciegaGrande);
+            if (ciega <= 0 && !this.validarCiegasController(ciega)){
+                vista.mensajeError();
+                modelo.errorCiega();
+                System.out.println("error en dato negativo o ciega muy grande");
+            }
+            else{
+                vista.mostrarMensaje("Ciega grande ingresada con éxito");
+                modelo.inicializarCiegas( (ciega / 2) ,ciega);
+                try {
+                    this.asignarCiegas();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        catch (Exception e){
+            vista.mensajeError();
+            modelo.errorCiega();
+            System.out.println("error de tipo de dato");
+        }
     }
     public boolean validarSubir(int apuestaActual){
         if (apuestaActual > modelo.getCiegaGrande()){
@@ -157,12 +196,15 @@ public class PokerController implements IObservador{
         }
     }
 
-    public boolean asignarCiegas(){
+    public void asignarCiegas(){
         if (modelo.asignarCiegas()){    // si pudo asignar las fichas entonces muevo el repartidor.
             modelo.moverRepartidor();
-            return true;
+//            modelo.cartasObserver();
+            return;
         }
-        return false;
+        vista.mensajeError();
+        System.out.println("error por lista vacía");
+        modelo.iniciarJuego();  // reiniciar juego por falta de jugadores...
     }
     public boolean repartirCartas(){
         if (!modelo.jugadoresIsEmpty()){
@@ -194,32 +236,110 @@ public class PokerController implements IObservador{
         return modelo;
     }
 
+    public void setEntrada(String entrada) {
+        this.entrada = entrada;
+    }
+
+    public String getEntrada() {
+        return entrada;
+    }
+    public boolean manejarSalir(int opcion){
+        boolean resultado = false;
+        if (opcion == JOptionPane.YES_OPTION){
+            System.exit(0);
+        } else if (opcion == JOptionPane.NO_OPTION) {
+            resultado = true;
+        }
+        else if (opcion == JOptionPane.CLOSED_OPTION){
+            System.exit(0);
+        }
+        return resultado;
+    }
+
     @Override
     public void actualizar(Object o) {
         Evento eventoActual = (Evento) o;
+        int salir = 0;
         switch (eventoActual){
             case NOMBRE_JUGADOR -> {
-                vista.mostrarMensaje("Todos los jugadores han sido registrados.");
-                break;
+                vista.iniciarVentana();
+                String actual = vista.pedirNombreJugador();
+                if (actual != null){
+                    this.jugadorAsociado = modelo.agregarJugador(actual);
+                    System.out.println(this.jugadorAsociado.getNombre());
+//                    if (this.jugadorAsociado == null){
+//                        // ver que hacer cuando se llega al limite de jugadores
+//                    }
+                }
+                else{
+                    salir = vista.opcionSalir();
+                    if(this.manejarSalir(salir)){modelo.iniciarJuego();}
+                }
+
+            }
+            case JUGADORES_INGRESADOS -> {
+                vista.mostrarMensaje("Todos los jugadores se han registrado con éxito!");
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){modelo.configurarJuego();}
+            }
+            case CANT_FICHAS_INICIALES -> {
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                    this.entrada = vista.pedirCantFichas();
+                    if (this.entrada != null){
+                        this.fichasInicialesController(this.entrada);
+                    }
+                    else{
+                        salir = vista.opcionSalir();
+                        if(this.manejarSalir(salir)){modelo.configurarJuego();}
+                    }
+                }
+                else{
+                    vista.mostrarMensaje("El anfitrión esta configurando las reglas de la partida...");
+                }
             }
             case FICHAS_INICIALES -> {
-                vista.mostrarMensaje("Todas las fichas han sido registradas.");
-                break;
-            }
-            case FICHAS_REPARTIDAS -> {
-                vista.mostrarMensaje("Todas las fichas han sido repartidas con éxito!");
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                    this.entrada = vista.pedirValorFichas();
+                    if (this.entrada != null){
+                        valorFichaController(this.entrada);
+                    }
+                    else{
+                        salir = vista.opcionSalir();
+                        if(this.manejarSalir(salir)){modelo.valorFichas();}
+                    }
+                }
             }
             case VALOR_CIEGAS -> {
-                vista.mostrarMensaje("Ciegas asignadas con éxito!");
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                    this.entrada = vista.pedirCiegaGrande();
+                    if (this.entrada != null){
+                        this.validarCiega(this.entrada);
+                    }
+                    else{
+                        salir = vista.opcionSalir();
+                        if(this.manejarSalir(salir)){modelo.errorCiega();}
+                    }
+                }
             }
             case REPARTIR_CARTAS -> {
-                vista.mostrarMensaje("Cartas repartidas a todos los jugadores.");
+                vista.mostrarMensaje("repartiendo cartas...");
+//                System.out.println("Turno actual: " + modelo.manejarTurnos().getNombre());
+                System.out.println("Jugador asociado a la vista: " + this.jugadorAsociado.getNombre());
+
+                if (this.repartirCartas()){
+                    if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                        vista.mostrarCartas(modelo.cartasTurnoActual());
+                        vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+                    }
+                    else{
+                        vista.mostrarMensaje("El jugador con turno actual esta viendo sus cartas.");
+                    }
+                }
+                else{
+                    vista.mensajeError();
+                    modelo.iniciarJuego();
+                }
             }
-//            case MOSTRAR_CARTAS -> {
-//                SwingUtilities.invokeLater(() -> {
-//                    vista.mostrarMensaje("Jugador " + jugadorTurnoController() + " sus cartas son: " + cartasTurnoController().toString());
-//                });
-//            }
+
         }
     }
 }

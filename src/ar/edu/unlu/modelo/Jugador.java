@@ -7,6 +7,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
     private List<Ficha> fichas;
     private boolean enJuego;
     private List<Ficha> apuestaActual;
+    private boolean primerApostante;
 
     public Jugador(String nombre){
         super(nombre);
@@ -14,6 +15,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         this.apuestaActual = new ArrayList<>();
         this.fichas = new ArrayList<>();
         this.mano = new Mano();
+        this.primerApostante = false;
     }
 
     public void reiniciame(){
@@ -21,6 +23,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         apuestaActual.clear();   // Elimina todas las apuestas
         enJuego = true;          // vuelve al juego
         mano.vaciarMano();       // vacía la mano del jugador.
+        primerApostante = false;
     }
 
     public void recibirCarta(Carta nuevaCarta){
@@ -32,6 +35,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         for(Ficha ficha : fichas){
             sumatoria += ficha.getValor();
         }
+        System.out.println(sumatoria);
         return sumatoria;
     }
     public int cantApuestaActual(){
@@ -155,5 +159,11 @@ public class Jugador extends Usuario implements ICalcularFichas {
         return mano;
     }
 
+    public void setPrimerApostante(boolean primerApostante) {
+        this.primerApostante = primerApostante;
+    }
 
+    public boolean isPrimerApostante() {
+        return primerApostante;
+    }
 }
