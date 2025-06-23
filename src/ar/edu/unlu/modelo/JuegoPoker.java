@@ -10,6 +10,8 @@ import java.util.List;
 
 public class JuegoPoker implements IObservable{
     private List<Jugador> jugadores;
+    private int cantidadJugadores;
+    private int jugadoresRegistrados;
     private Bote bote;
     private Baraja baraja;
     private Ficha ciegaChica;
@@ -24,6 +26,8 @@ public class JuegoPoker implements IObservable{
 
     public JuegoPoker(){
         this.jugadores = new ArrayList<>();
+        this.cantidadJugadores = 0;
+        this.jugadoresRegistrados = 0;
         this.baraja = new Baraja();
         this.bote = new Bote();
         this.posRepartidor = 0;
@@ -211,9 +215,10 @@ public class JuegoPoker implements IObservable{
 //        System.out.println("Jugador agregado: " + nombre);
 
         // Si hay al menos 2 jugadores, se notifica que puede iniciar la partida.
-        if (jugadores.size() >= 2) {
-            notificar(Evento.JUGADORES_INGRESADOS);
-        }
+//        if (jugadores.size() >= 2) {
+//            notificar(Evento.JUGADORES_INGRESADOS);
+//        }
+        this.incrementoJugadoresRegistrados();
 //        System.out.println(actual.getNombre());
         return actual;
     }
@@ -316,7 +321,12 @@ public class JuegoPoker implements IObservable{
         return turno;
     }
 
-
+    public void incrementoJugadoresRegistrados() {
+        this.jugadoresRegistrados++;
+        if (jugadoresRegistrados == cantidadJugadores) {
+            notificar(Evento.JUGADORES_INGRESADOS);
+        }
+    }
     public int getApuestaActual() {
         return apuestaActual;
     }
@@ -332,4 +342,16 @@ public class JuegoPoker implements IObservable{
     public Jugador getAnfitrion() {
         return anfitrion;
     }
+
+    public void setCantidadJugadores(int cantidadJugadores) {
+        this.cantidadJugadores = cantidadJugadores;
+    }
+    public int getCantidadJugadores() {
+        return cantidadJugadores;
+    }
+
+    public int getJugadoresRegistrados() {
+        return jugadoresRegistrados;
+    }
+
 }

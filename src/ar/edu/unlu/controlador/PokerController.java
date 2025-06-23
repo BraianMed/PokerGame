@@ -262,20 +262,26 @@ public class PokerController implements IObservador{
         int salir = 0;
         switch (eventoActual){
             case NOMBRE_JUGADOR -> {
-                vista.iniciarVentana();
-                String actual = vista.pedirNombreJugador();
-                if (actual != null){
-                    this.jugadorAsociado = modelo.agregarJugador(actual);
-                    System.out.println(this.jugadorAsociado.getNombre());
+                //vista.iniciarVentana();
+                if(this.jugadorAsociado == null) {
+                    String actual = vista.pedirNombreJugador();
+                    if (actual != null) {
+                        this.jugadorAsociado = modelo.agregarJugador(actual);
+                        System.out.println(this.jugadorAsociado.getNombre());
+
 //                    if (this.jugadorAsociado == null){
 //                        // ver que hacer cuando se llega al limite de jugadores
 //                    }
+                    } else {
+                        salir = vista.opcionSalir();
+                        if (this.manejarSalir(salir)) {
+                            modelo.iniciarJuego();
+                        }
+                    }
                 }
-                else{
-                    salir = vista.opcionSalir();
-                    if(this.manejarSalir(salir)){modelo.iniciarJuego();}
-                }
-
+//                else{
+//                    vista.mostrarMensaje("Ya se ha ingresado un jugador con el nombre: " + this.jugadorAsociado.getNombre());
+//                }
             }
             case JUGADORES_INGRESADOS -> {
                 vista.mostrarMensaje("Todos los jugadores se han registrado con éxito!");
@@ -321,8 +327,12 @@ public class PokerController implements IObservador{
                 }
             }
             case REPARTIR_CARTAS -> {
+                if (this.jugadorAsociado == null){
+
+                }
                 vista.mostrarMensaje("repartiendo cartas...");
 //                System.out.println("Turno actual: " + modelo.manejarTurnos().getNombre());
+                System.out.println(modelo.getJugadoresRegistrados());
                 System.out.println("Jugador asociado a la vista: " + this.jugadorAsociado.getNombre());
 
                 if (this.repartirCartas()){
