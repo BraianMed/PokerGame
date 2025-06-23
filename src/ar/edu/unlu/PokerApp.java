@@ -10,14 +10,20 @@ import static java.lang.System.exit;
 
 public class PokerApp {
     public ArrayList<PokerController> controladores;
+    public String input;
 
     public void iniciar() {
         int cantidad = 0;
         while (cantidad < 2) { // Mínimo 2 jugadores
-            String input = JOptionPane.showInputDialog(null, "Ingrese la cantidad de jugadores:");
+            input = JOptionPane.showInputDialog(null, "Ingrese la cantidad de jugadores: [2 a 6]");
             if (input == null) {exit(0);} // Cancelar
             try {
                 cantidad = Integer.parseInt(input);
+                if (cantidad > 6){
+                    JOptionPane.showMessageDialog(null,"ERROR AL INGRESAR EL DATO -> REINTENTAR NUEVAMENTE");
+                    cantidad = 0;
+                }
+
             } catch (NumberFormatException e) {
                 cantidad = 0;
             }

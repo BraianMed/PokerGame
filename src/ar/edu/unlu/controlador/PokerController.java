@@ -268,7 +268,9 @@ public class PokerController implements IObservador{
                     if (actual != null) {
                         this.jugadorAsociado = modelo.agregarJugador(actual);
                         System.out.println(this.jugadorAsociado.getNombre());
-
+                        if (modelo.isReady()){
+                            modelo.notificar(Evento.JUGADORES_INGRESADOS);
+                        }
 //                    if (this.jugadorAsociado == null){
 //                        // ver que hacer cuando se llega al limite de jugadores
 //                    }
@@ -327,9 +329,7 @@ public class PokerController implements IObservador{
                 }
             }
             case REPARTIR_CARTAS -> {
-                if (this.jugadorAsociado == null){
 
-                }
                 vista.mostrarMensaje("repartiendo cartas...");
 //                System.out.println("Turno actual: " + modelo.manejarTurnos().getNombre());
                 System.out.println(modelo.getJugadoresRegistrados());

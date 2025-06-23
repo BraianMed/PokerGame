@@ -12,6 +12,7 @@ public class JuegoPoker implements IObservable{
     private List<Jugador> jugadores;
     private int cantidadJugadores;
     private int jugadoresRegistrados;
+    private boolean ready;
     private Bote bote;
     private Baraja baraja;
     private Ficha ciegaChica;
@@ -28,6 +29,7 @@ public class JuegoPoker implements IObservable{
         this.jugadores = new ArrayList<>();
         this.cantidadJugadores = 0;
         this.jugadoresRegistrados = 0;
+        this.ready = false;
         this.baraja = new Baraja();
         this.bote = new Bote();
         this.posRepartidor = 0;
@@ -324,7 +326,7 @@ public class JuegoPoker implements IObservable{
     public void incrementoJugadoresRegistrados() {
         this.jugadoresRegistrados++;
         if (jugadoresRegistrados == cantidadJugadores) {
-            notificar(Evento.JUGADORES_INGRESADOS);
+            this.ready = true;
         }
     }
     public int getApuestaActual() {
@@ -354,4 +356,7 @@ public class JuegoPoker implements IObservable{
         return jugadoresRegistrados;
     }
 
+    public boolean isReady() {
+        return ready;
+    }
 }
