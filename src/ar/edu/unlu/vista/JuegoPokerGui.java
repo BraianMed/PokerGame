@@ -4,13 +4,10 @@ import ar.edu.unlu.controlador.PokerController;
 import ar.edu.unlu.modelo.Evento;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-
-import static javax.swing.SwingUtilities.getRootPane;
 
 public class JuegoPokerGui{
 
@@ -70,7 +67,7 @@ public class JuegoPokerGui{
         this.noDebenDescartar = false;
 //        mostrarMensaje("Ingrese la cantidad de jugadores (2-6):");
 //        accionBotonEnviar();
-
+        this.accionBotonEnviar();
         frame.setVisible(true); // pongo la visibilidad del frame en true.
     }
 
@@ -115,10 +112,11 @@ public class JuegoPokerGui{
         botonEnviar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                controlador.setEntrada(barraTexto.getText().trim());
+                controlador.comunicarEntrada(barraTexto.getText().trim());
                 System.out.println("capturado");
 //                entrada = barraTexto.getText().trim();
                 barraTexto.setText(""); // Limpiar el texto después de obtener el valor
+//                barraTexto.requestFocusInWindow();
             }
         });
     }
@@ -519,6 +517,51 @@ public class JuegoPokerGui{
     public int opcionSalir(){
         return JOptionPane.showConfirmDialog(null,"Quiere salir del juego?","Exit",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
     }
+    public void mensajeIgualar(String nombre){
+        this.mostrarMensaje("El jugador " + nombre + " igualó correctamente.");
+    }
+    public void mensajeTurnoActual(String nombre){
+        this.mostrarMensaje("Es el turno del jugador " + nombre + ", espere su turno...");
+    }
+    public String pedirApuesta(){
+        return JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]");
+    }
+    public void mensajeAposto(String nombre){
+        this.mostrarMensaje("El jugador " + nombre + " apostó exitosamente.");
+    }
+    public void mensajePaso(String nombre){
+        mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " decidió pasar.");
+    }
+    public void mensajeRetirado(String nombre){
+        mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " se retiro de la partida.");
+    }
+    public void mensajeErrorIgualar(String nombre,int apuesta,int totalFichas){
+        this.mostrarMensaje(nombre + " tu saldo es de: " + totalFichas + " y pretendes igualar una apuesta de: " + apuesta);
+        this.mostrarMensaje("no tiene saldo suficiente para dicha acción");
+    }
+    public void mensajeDescarte(){
+        mostrarMensaje("proceso de descarte, decida cuantas cartas va a descartar: ");
+    }
+    public void mensajeSinDescarte(String nombre){
+        mostrarMensaje("El jugador " + nombre + " decidió no descartar!");
+    }
+    public void mensajeIndices(){
+        mostrarMensaje("Ingrese el numero de cartas a descartar: ej. carta 1, carta 2 etc...");
+    }
+    public void mensajeCargaExitosa(){
+        mostrarMensaje("Los indices han sido cargados con éxito!");
+    }
+    public void mensajeFinal(String ganador){
+        if (ganador == null) {
+            JOptionPane.showMessageDialog(null, "La partida concluyo en empate.");
+        } else {
+            JOptionPane.showMessageDialog(null, "El ganador indiscutido es: " + ganador);
+        }
+    }
+    public int mensajeReiniciarJuego(){
+        return JOptionPane.showConfirmDialog(null,"Quiere reiniciar el juego?","Decisión",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+    }
+
     public void salir(){
 
     }

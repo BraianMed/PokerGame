@@ -14,12 +14,19 @@ public class PokerController implements IObservador{
     private int jugadoresAgregados = 0;
     private Jugador jugadorAsociado;
     private String entrada;
+    private Evento eventoActual;
+    private ArrayList<Integer> indices;
+    private int cantDescarte;
+    private int cantDescartadas;
 
     public PokerController(JuegoPoker modelo,JuegoPokerGui vista){
         this.modelo = modelo;
         this.vista = vista;
         vista.setControlador(this);
         modelo.agregarObservador(this);
+        this.indices = new ArrayList<>();
+        this.cantDescarte = 0;
+        this.cantDescartadas = 0;
     }
 
     private void solicitarCantidadJugadores() {
@@ -50,6 +57,7 @@ public class PokerController implements IObservador{
     public boolean validarCantJugadores(int cantidad){
         return cantidad >= 2 && cantidad <= 6;
     }
+
     public boolean validarCantCartasDescarte(int cantidad){
         if (cantidad > 5 || cantidad < 1){
             return false;
@@ -101,6 +109,7 @@ public class PokerController implements IObservador{
            int cantFichas = Integer.parseInt(fichasIniciales);
            if (cantFichas <= 0 ){
                vista.mensajeError();
+//               this.entrada = vista.pedirCantFichas();
                modelo.configurarJuego();
            }
            else{
@@ -132,6 +141,20 @@ public class PokerController implements IObservador{
         catch (Exception e){
             vista.mensajeError();
             modelo.valorFichas();
+        }
+        return valorFicha;
+    }
+
+    public int valorFichaApuesta(String entrada){
+        int valorFicha;
+        try {
+            valorFicha = Integer.parseInt(entrada);
+            if (valorFicha <= 0 ){
+                return -1;
+            }
+        }
+        catch (Exception e){
+            return -1;
         }
         return valorFicha;
     }
@@ -168,9 +191,11 @@ public class PokerController implements IObservador{
             return false;
         }
     }
+
     public void retirarJugadorController(){
         modelo.retirarJugador();
     }
+
     public int fichasJugadorActual(){
         return modelo.manejarTurnos().totalFichas();
     }
@@ -187,6 +212,7 @@ public class PokerController implements IObservador{
     public void valorCiegasController(int ciegaGrande){
         modelo.inicializarCiegas( (ciegaGrande / 2) ,ciegaGrande);
     }
+
     public boolean validarCiegasController(int ciegaActual){
         if (ciegaActual > modelo.getJugadores().get(0).totalFichas() && (ciegaActual / 2) > modelo.getJugadores().get(0).totalFichas() ){
             return false;
@@ -227,6 +253,17 @@ public class PokerController implements IObservador{
         }
         return resultado;
     }
+    public int validarCantDescarte(String entrada) {
+        try {
+            int valor = Integer.parseInt(entrada);
+            if (valor >= 1 && valor <= 5) {
+                return valor;
+            }
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+        return -1;
+    }
 
     public void reiniciarJuego(){
         modelo.reiniciarJuego();
@@ -236,8 +273,131 @@ public class PokerController implements IObservador{
         return modelo;
     }
 
-    public void setEntrada(String entrada) {
-        this.entrada = entrada;
+    public void comunicarEntrada(String input) {
+        if (eventoActual.equals(Evento.APUESTA)){
+            if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                switch (input.toLowerCase()){
+                    case "igualar" -> {
+                        this.manejarIgualar();
+                        this.modelo.gestionVuelta();
+                    }
+                    case "subir" -> {
+                        this.manejarSubir();
+                        this.modelo.gestionVuelta();
+                    }
+                    case "pasar" -> {
+                        this.manejarPasar();
+                        this.modelo.gestionVuelta();
+                    }
+                    case "retirarse" ->{
+                        this.manejarRetirarse();
+                        this.modelo.gestionVuelta();
+                    }
+                    default -> {
+                        vista.mensajeError();
+                        vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+                    }
+                }
+            }
+            else{
+                vista.mensajeTurnoActual(this.modelo.manejarTurnos().getNombre());
+            }
+        }
+        else if (this.eventoActual.equals(Evento.CANT_DESCARTE)){
+            if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                this.indices.clear();
+                cantDescarte = validarCantDescarte(input);
+                manejarCantDescarte();
+            }
+        }
+        else if (this.eventoActual.equals(Evento.INDICES_DESCARTE)){
+            if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                manejarIndiceDescarte(input);
+            }
+        }
+//        this.modelo.recibirEntrada(entrada,this.jugadorAsociado);
+    }
+
+    private void manejarIgualar(){
+        try {
+            modelo.igualarJugador();
+            this.jugadorAsociado.setPrimerApostante(false);
+        } catch (Exception e) {
+            vista.mensajeErrorIgualar(this.jugadorAsociado.getNombre(),modelo.getApuestaActual(),this.jugadorAsociado.totalFichas());
+            // ver como hacer cuando quiere igualar y no tiene saldo...
+        }
+        vista.mensajeIgualar(this.jugadorAsociado.getNombre());
+    }
+    public void manejarSubir(){
+        String apuesta = vista.pedirApuesta();
+        int apuestaEntera = this.valorFichaApuesta(apuesta);
+        if (apuestaEntera != -1 && this.validarSubir(apuestaEntera)){
+            this.modelo.apostarJugador(apuestaEntera);
+            vista.mensajeAposto(this.jugadorAsociado.getNombre());
+            this.jugadorAsociado.setPrimerApostante(false);
+        }
+        else{
+            vista.mensajeError();
+            vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+        }
+    }
+
+    public void manejarPasar(){
+        vista.mensajePaso(this.jugadorAsociado.getNombre());
+    }
+
+    public void manejarRetirarse(){
+        modelo.retirarJugador();
+        vista.mensajeRetirado(this.jugadorAsociado.getNombre());
+    }
+
+    public void manejarCantDescarte(){
+        if (this.cantDescarte != -1){
+            if (this.cantDescarte == 0){
+                vista.mensajeSinDescarte(this.jugadorAsociado.getNombre());
+                this.modelo.gestionVuelta();
+            }
+            else{
+                vista.mensajeIndices();
+                eventoActual = Evento.INDICES_DESCARTE;
+            }
+        }
+        else{
+            vista.mensajeError();
+            vista.mensajeDescarte();
+        }
+    }
+
+    public void manejarIndiceDescarte(String indice){
+        int indiceDescarte;
+        try {
+            indiceDescarte = Integer.parseInt(indice) - 1;
+        } catch (NumberFormatException e) {
+            vista.mensajeError();
+            vista.mensajeIndices();
+            return;
+        }
+        // ver si funciona la validación, si no usar el método this.validarIndices
+        if (indiceDescarte >= 0 && indiceDescarte <= 4 && !indices.contains(indiceDescarte)) {
+            this.indices.add(indiceDescarte);
+            cantDescartadas++;
+            if (cantDescartadas == this.cantDescarte) {
+                this.cantDescartadas = 0;
+                this.cantDescarte = 0;
+                vista.mensajeCargaExitosa();
+                this.modelo.descartarJugador(new ArrayList<>(indices));
+                this.indices.clear(); // Limpiar la lista después de usarla
+                vista.mostrarCartas(modelo.cartasTurnoActual());
+                this.modelo.gestionVuelta();
+            }
+            else{
+                vista.mensajeCargaExitosa();
+                vista.mensajeIndices();
+            }
+        } else {
+            vista.mensajeError();
+            vista.mensajeIndices();
+        }
     }
 
     public String getEntrada() {
@@ -255,6 +415,18 @@ public class PokerController implements IObservador{
         }
         return resultado;
     }
+    public boolean manejarDesicion(int opcion){
+        boolean resultado = false;
+        if (opcion == JOptionPane.YES_OPTION){
+            this.modelo.reiniciarJuego();
+        } else if (opcion == JOptionPane.NO_OPTION) {
+            System.exit(0);
+        }
+        else if (opcion == JOptionPane.CLOSED_OPTION){
+            System.exit(0);
+        }
+        return resultado;
+    }
 
     @Override
     public void actualizar(Object o) {
@@ -263,6 +435,10 @@ public class PokerController implements IObservador{
         switch (eventoActual){
             case NOMBRE_JUGADOR -> {
                 //vista.iniciarVentana();
+                if (modelo.isError()){
+                    vista.mensajeError();
+                    modelo.setError(false);
+                }
                 if(this.jugadorAsociado == null) {
                     String actual = vista.pedirNombreJugador();
                     if (actual != null) {
@@ -312,7 +488,7 @@ public class PokerController implements IObservador{
                     }
                     else{
                         salir = vista.opcionSalir();
-                        if(this.manejarSalir(salir)){modelo.valorFichas();}
+                        if(this.manejarSalir(salir)){modelo.valorFichas();} // ver el tema de cuando ingresan pocas fichas y la ciega es más grande
                     }
                 }
             }
@@ -329,24 +505,56 @@ public class PokerController implements IObservador{
                 }
             }
             case REPARTIR_CARTAS -> {
-
-                vista.mostrarMensaje("repartiendo cartas...");
+                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                    vista.mostrarMensaje("repartiendo cartas...");
 //                System.out.println("Turno actual: " + modelo.manejarTurnos().getNombre());
-                System.out.println(modelo.getJugadoresRegistrados());
-                System.out.println("Jugador asociado a la vista: " + this.jugadorAsociado.getNombre());
+                    System.out.println(modelo.getJugadoresRegistrados());
+                    System.out.println("Jugador asociado a la vista: " + this.jugadorAsociado.getNombre());
 
-                if (this.repartirCartas()){
-                    if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
-                        vista.mostrarCartas(modelo.cartasTurnoActual());
-                        vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
-                    }
-                    else{
-                        vista.mostrarMensaje("El jugador con turno actual esta viendo sus cartas.");
-                    }
+                    modelo.repartirCartas();
                 }
-                else{
-                    vista.mensajeError();
-                    modelo.iniciarJuego();
+
+            }
+            case MOSTRAR_CARTAS -> {
+                if(eventoActual.equals(Evento.APUESTA)){break;}
+
+                if (modelo.manejarTurnos().equals(this.jugadorAsociado)) {
+                    System.out.println("turno actual: "+ modelo.getTurno());
+                    vista.mostrarCartas(modelo.cartasTurnoActual());
+                    // ver como ahorrar las siguientes 3 líneas de código:
+                    vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(), this.jugadorAsociado.getNombre(), this.jugadorAsociado.totalFichas());
+                    this.eventoActual = Evento.APUESTA;
+//                    vista.accionBotonEnviar();
+                } else {
+                    vista.mostrarMensaje("El jugador con turno actual esta viendo sus cartas.");
+                }
+            }
+            case APUESTA -> {
+                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                    vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+                    this.eventoActual = Evento.APUESTA;
+//                    vista.accionBotonEnviar();
+                }
+            }
+            case CANT_DESCARTE -> {
+                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                    vista.mensajeDescarte();
+                    this.eventoActual = Evento.CANT_DESCARTE;
+//                    vista.accionBotonEnviar();
+                }
+            }
+            case INDICES_DESCARTE -> {
+                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                    vista.mensajeIndices();
+                    this.eventoActual = Evento.INDICES_DESCARTE;
+//                    vista.accionBotonEnviar();
+                }
+            }
+            case DEFINIR_GANADORES -> {
+                vista.mensajeFinal(this.ganadorController());
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                    int opcion = vista.mensajeReiniciarJuego();
+                    this.manejarDesicion(opcion);
                 }
             }
 
