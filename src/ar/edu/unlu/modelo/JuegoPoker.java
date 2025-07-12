@@ -10,13 +10,8 @@ public class JuegoPoker implements IObservable{
     private List<Jugador> jugadores;
     private int cantidadJugadores;
     private int jugadoresRegistrados;
-    private boolean ready;
     private boolean primeraVuelta;
-    private boolean segundaVuelta;
-    private int vuelta;
-    private int jugadoresActuaron;
     private int turnoActual;
-    private boolean todosDescartaron;
     private Bote bote;
     private Baraja baraja;
     private Ficha ciegaChica;
@@ -37,12 +32,7 @@ public class JuegoPoker implements IObservable{
         this.jugadores = new ArrayList<>();
         this.cantidadJugadores = 0;
         this.jugadoresRegistrados = 0;
-        this.ready = false;
         this.primeraVuelta = true;
-        this.segundaVuelta = false;
-        this.vuelta = 1;
-        this.jugadoresActuaron = 0;
-        this.todosDescartaron = false;
         this.baraja = new Baraja();
         this.bote = new Bote();
         this.posRepartidor = 0;
@@ -59,19 +49,6 @@ public class JuegoPoker implements IObservable{
 
     public void iniciarJuego(){
         notificar(Evento.NOMBRE_JUGADOR);
-    }
-
-    public void configurarJuego(){
-//        System.out.println("debug");
-        notificar(Evento.CANT_FICHAS_INICIALES);
-    }
-
-    public void valorFichas(){
-        notificar(Evento.FICHAS_INICIALES);
-    }
-
-    public void errorCiega(){
-        notificar(Evento.VALOR_CIEGAS);
     }
 
     public void moverRepartidor(){
@@ -115,6 +92,10 @@ public class JuegoPoker implements IObservable{
         return false;
     }
 
+    public void errorCiega(){
+        notificar(Evento.VALOR_CIEGAS);
+    }
+
     public boolean jugadoresIsEmpty(){
         return jugadores.isEmpty();
     }
@@ -143,9 +124,14 @@ public class JuegoPoker implements IObservable{
         this.cartasTurnoActual = manejarTurnos().devolverCartas();
         return manejarTurnos().devolverCartas();
     }
-    public void repartirFichas(){
-        for (Jugador jugador : jugadores){
-            jugador.setFichas(this.fichasIniciales);
+    public void repartirFichas() {
+        for (Jugador jugador : jugadores) {
+            // Clonar la lista
+            List<Ficha> copia = new ArrayList<>();
+            for (Ficha f : this.fichasIniciales) {
+                copia.add(new Ficha(f.getValor()));
+            }
+            jugador.setFichas(copia);
         }
 //        notificar(Evento.FICHAS_REPARTIDAS);
     }
@@ -154,31 +140,6 @@ public class JuegoPoker implements IObservable{
         jugadores.get(getTurno()).descartar(indices);
     }
 
-
-//    public void gestionVuelta() {
-//        if (jugadores.isEmpty()) return;
-//        jugadoresActuaron++;
-////        int turnoAnterior = getTurno();
-////        siguienteTurno();
-////        int turnoActual = getTurno();
-//
-//        if (primeraVuelta) {
-//            if (jugadoresActuaron == cantJugadoresEnJuego()) {
-//                primeraVuelta = false;
-//                siguienteTurno();
-//                notificar(Evento.APUESTA); // Segunda vuelta
-//            } else {
-//                notificar(Evento.CANT_DESCARTE); // Sigue primera vuelta
-//            }
-//        } else {
-//            if (turnoActual == 0 || turnoActual <= turnoAnterior) {
-//                notificar(Evento.DEFINIR_GANADORES); // Fin de la segunda vuelta
-//            } else {
-//                siguienteTurno();
-//                notificar(Evento.APUESTA); // Sigue segunda vuelta
-//            }
-//        }
-//    }
     public void gestionVuelta() {
         int activos = cantJugadoresEnJuego();
         if (activos == 0) return;
@@ -219,16 +180,6 @@ public class JuegoPoker implements IObservable{
         }
     }
 
-    public void turnoPrimeraVuelta(){
-        if (primeraVuelta) {
-            if (turnoActual < jugadores.size() - 1) {
-                turnoActual++;
-                notificar(Evento.APUESTA);
-            }
-        } else {
-            notificar(Evento.APUESTA); // Segunda vuelta, solo apuestas
-        }
-    }
     public int cantJugadoresEnJuego(){
         int contador = 0;
         for (Jugador jugador : jugadores){
@@ -239,9 +190,22 @@ public class JuegoPoker implements IObservable{
         return contador;
     }
     public void reiniciarJuego(){
+        this.primeraVuelta = true;
+        this.baraja = new Baraja();
+        this.bote = new Bote();
+        this.posRepartidor = 0;
+        this.fichasIniciales = new ArrayList<>();
+        this.turno = 0;
+        this.apuestaActual = 0;
+        this.error = false;
+        this.cartasTurnoActual = new ArrayList<>();
+        this.turnoActual = 0;
+        this.turnoAnterior = 0;
+        this.accionesContadas = 0;
         for (Jugador jugador : jugadores){
             jugador.reiniciame();
         }
+        this.configurarJuego();
     }
 
     public Jugador determinarGanador(){
@@ -289,7 +253,7 @@ public class JuegoPoker implements IObservable{
         jugadores.get(getTurno()).retirarse();
     }
 
-    public void apostarJugador(int cantidad){
+    public void apostarJugador(int cantidad) throws IllegalArgumentException{
         jugadores.get(getTurno()).apostar(cantidad,bote);
         this.apuestaActual = cantidad;
 //        notificar(Evento.APUESTA);
@@ -309,19 +273,11 @@ public class JuegoPoker implements IObservable{
         }
 
         jugadores.add(actual);
-//        System.out.println("Jugador agregado: " + nombre);
 
-        // Si hay al menos 2 jugadores, se notifica que puede iniciar la partida.
-//        if (jugadores.size() >= 2) {
-//            notificar(Evento.JUGADORES_INGRESADOS);
-//        }
-        this.incrementoJugadoresRegistrados();
-//        System.out.println(actual.getNombre());
+        this.jugadoresRegistrados++;
+//        this.incrementoJugadoresRegistrados();
+
         return actual;
-    }
-
-    public void recibirEntrada(String entrada,Jugador jugadorActual){
-
     }
 
     public void agregarJugadores(ArrayList<String> nombres){
@@ -348,8 +304,9 @@ public class JuegoPoker implements IObservable{
         }
     }
 
-    public Baraja getBaraja() {
-        return baraja;
+    public void configurarJuego(){
+//        System.out.println("debug");
+        notificar(Evento.CANT_FICHAS_INICIALES);
     }
 
     public List<Jugador> getJugadores() {
@@ -372,6 +329,11 @@ public class JuegoPoker implements IObservable{
             notificar(Evento.VALOR_CIEGAS);
         }
     }
+
+    public void valorFichas(){
+        notificar(Evento.FICHAS_INICIALES);
+    }
+
     public void agregarFichas(ArrayList<Integer> valores){
         for (Integer valorFicha : valores){
             agregarFicha(valorFicha);
@@ -405,36 +367,26 @@ public class JuegoPoker implements IObservable{
 
         return turno;
     }
-
     private void avanzarTurno() {
         do {
             turnoActual = (turnoActual + 1) % jugadores.size();
         } while (!jugadores.get(turnoActual).isEnJuego());
     }
 
-    public void setCiegaChica(int valor) {
-        this.ciegaChica = new Ficha(valor);
-    }
-    public void setCiegaGrande(int valor){
-        this.ciegaGrande = new Ficha(valor);
-    }
-
     public int getCiegaGrande() {
         return ciegaGrande.getValor();
-    }
-
-    public int getPosRepartidor() {
-        return posRepartidor;
     }
 
     public int getTurno() {
         return turno;
     }
 
-    public void incrementoJugadoresRegistrados() {
-        this.jugadoresRegistrados++;
+    public void verificarJugadoresListos(){
         if (jugadoresRegistrados == cantidadJugadores) {
-            this.ready = true;
+            notificar(Evento.JUGADORES_INGRESADOS);
+        }
+        else{
+            notificar(Evento.NOMBRE_JUGADOR);
         }
     }
     public int getApuestaActual() {
@@ -456,24 +408,13 @@ public class JuegoPoker implements IObservable{
     public void setCantidadJugadores(int cantidadJugadores) {
         this.cantidadJugadores = cantidadJugadores;
     }
-    public int getCantidadJugadores() {
-        return cantidadJugadores;
-    }
 
     public int getJugadoresRegistrados() {
         return jugadoresRegistrados;
     }
 
-    public boolean isReady() {
-        return ready;
-    }
-
-    public boolean isPrimeraVuelta() {
-        return primeraVuelta;
-    }
-
-    public int getVuelta() {
-        return vuelta;
+    public int totalApostadoBote(){
+        return this.bote.totalFichas();
     }
 
     public boolean isError() {

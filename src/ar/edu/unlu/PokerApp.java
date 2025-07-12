@@ -3,7 +3,9 @@ package ar.edu.unlu;
 import javax.swing.JOptionPane;
 import ar.edu.unlu.controlador.PokerController;
 import ar.edu.unlu.modelo.JuegoPoker;
+import ar.edu.unlu.vista.IVista;
 import ar.edu.unlu.vista.JuegoPokerGui;
+
 import java.util.ArrayList;
 
 import static java.lang.System.exit;
@@ -33,7 +35,7 @@ public class PokerApp {
         this.controladores = new ArrayList<>();
         modelo.setCantidadJugadores(cantidad);
         for (int i = 0; i < cantidad; i++) {
-            JuegoPokerGui vista = new JuegoPokerGui();
+            IVista vista = new JuegoPokerGui();
             PokerController controlador = new PokerController(modelo, vista);
             this.controladores.add(controlador);
             vista.iniciarVentana();

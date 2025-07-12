@@ -254,8 +254,21 @@ public class Mano implements Comparable<Mano>{
         // comparo por el tipoDeMano y si no son iguales entonces retorno el resultado de la comparación
         int tipoComparacion = this.tipoDeMano.compareTo(o.getTipoDeMano());
         if (tipoComparacion != 0) return tipoComparacion;
-        // si no, comparo los valores ordinales sumados en el map, ya que los valores son los ordinales de los enum CartaValor.
-        return Integer.compare(this.valorTotalCartas(),o.valorTotalCartas());
+
+        // 2. Si no ordeno cartas de mayor a menor
+        List<Carta> thisCartas = new ArrayList<>(this.cartas);
+        List<Carta> otraCartas = new ArrayList<>(o.cartas);
+        Collections.sort(thisCartas, Comparator.reverseOrder());
+        Collections.sort(otraCartas, Comparator.reverseOrder());
+
+        // 3. Comparo carta por carta
+        for (int i = 0; i < thisCartas.size(); i++) {
+            int comparacionCarta = thisCartas.get(i).compareTo(otraCartas.get(i));
+            if (comparacionCarta != 0) {
+                return comparacionCarta;
+            }
+        }
+        return 0; // Empate total (todas las cartas iguales)
     }
     @Override
     public int hashCode() {

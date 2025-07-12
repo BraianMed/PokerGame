@@ -2,7 +2,7 @@ package ar.edu.unlu.modelo;
 
 import java.util.*;
 
-public class Jugador extends Usuario implements ICalcularFichas {
+public class Jugador extends Usuario implements IJugador {
     private Mano mano;
     private List<Ficha> fichas;
     private boolean enJuego;
@@ -18,6 +18,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         this.primerApostante = false;
     }
 
+    @Override
     public void reiniciame(){
         fichas.clear();          // Elimina todas las fichas
         apuestaActual.clear();   // Elimina todas las apuestas
@@ -26,10 +27,12 @@ public class Jugador extends Usuario implements ICalcularFichas {
         primerApostante = false;
     }
 
+    @Override
     public void recibirCarta(Carta nuevaCarta){
         mano.agregarCarta(nuevaCarta);
     }
 
+    @Override
     public int totalFichas(){
         int sumatoria = 0;
         for(Ficha ficha : fichas){
@@ -38,6 +41,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         System.out.println(sumatoria);
         return sumatoria;
     }
+    @Override
     public int cantApuestaActual(){
         int sumatoria = 0;
         for(Ficha ficha : apuestaActual){
@@ -45,6 +49,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         }
         return sumatoria;
     }
+    @Override
     public void restarFichas(int cantidad) {
         // usar un iterador para que me permita eliminar un elemento en medio del ciclo
         if (cantidad > totalFichas()){
@@ -70,11 +75,13 @@ public class Jugador extends Usuario implements ICalcularFichas {
             }
         }
     }
+    @Override
     public void recibirFichas(Ficha ficha){
         fichas.add(ficha);
     }
 
-    public void apostar(int cantidad,Bote bote){
+    @Override
+    public void apostar(int cantidad, Bote bote) throws IllegalArgumentException{
         if (cantidad > totalFichas()){
             throw new IllegalArgumentException("No tienes suficiente fichas");
         }
@@ -103,6 +110,7 @@ public class Jugador extends Usuario implements ICalcularFichas {
         }
     }
 
+    @Override
     public void descartar(ArrayList<Integer> indices){
         // creo dos arreglos de valores y pintas para poder sacar uno de forma aleatoria y asígnasela al jugador que descarto.
         CartaValor[] valores = CartaValor.values();
@@ -121,10 +129,12 @@ public class Jugador extends Usuario implements ICalcularFichas {
 
     }
 
+    @Override
     public void retirarse(){
         setEnJuego(false);
     }
 
+    @Override
     public ArrayList<String> devolverCartas(){
         ArrayList<String> resultado = new ArrayList<>();
         for (int i = 0; i < mano.getCartas().size(); i++) {
@@ -133,36 +143,44 @@ public class Jugador extends Usuario implements ICalcularFichas {
         return resultado;
     }
 
+    @Override
     public void definirManoJugador(){
         if (!mano.getCartas().isEmpty()){
             mano.definirMano();
         }
     }
 
+    @Override
     public List<Ficha> getFichas() {
         return fichas;
     }
 
+    @Override
     public void setFichas(List<Ficha> fichas) {
         this.fichas = fichas;
     }
 
+    @Override
     public boolean isEnJuego() {
         return enJuego;
     }
 
+    @Override
     public void setEnJuego(boolean enJuego) {
         this.enJuego = enJuego;
     }
 
+    @Override
     public Mano getMano() {
         return mano;
     }
 
+    @Override
     public void setPrimerApostante(boolean primerApostante) {
         this.primerApostante = primerApostante;
     }
 
+    @Override
     public boolean isPrimerApostante() {
         return primerApostante;
     }
