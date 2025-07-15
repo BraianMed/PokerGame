@@ -4,7 +4,6 @@ import ar.edu.unlu.modelo.Evento;
 import ar.edu.unlu.modelo.JuegoPoker;
 import ar.edu.unlu.modelo.Jugador;
 import ar.edu.unlu.vista.IVista;
-import ar.edu.unlu.vista.JuegoPokerGui;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -18,6 +17,7 @@ public class PokerController implements IObservador{
     private ArrayList<Integer> indices;
     private int cantDescarte;
     private int cantDescartadas;
+    private Jugador ganador;
 
     public PokerController(JuegoPoker modelo, IVista vista){
         this.modelo = modelo;
@@ -345,8 +345,8 @@ public class PokerController implements IObservador{
         }
         return resultado;
     }
-    public boolean manejarDesicion(int opcion){
-        boolean resultado = false;
+    public void manejarDesicion(int opcion){
+
         if (opcion == JOptionPane.YES_OPTION){
             this.modelo.reiniciarJuego();
         } else if (opcion == JOptionPane.NO_OPTION) {
@@ -355,7 +355,6 @@ public class PokerController implements IObservador{
         else if (opcion == JOptionPane.CLOSED_OPTION){
             System.exit(0);
         }
-        return resultado;
     }
 
     @Override
@@ -476,7 +475,18 @@ public class PokerController implements IObservador{
                 }
             }
             case DEFINIR_GANADORES -> {
-                vista.mensajeFinal(this.ganadorController());
+                vista.limpiarBarraTexto();
+                vista.limpiarTextoPlano();
+                if (modelo.determinarGanador().equals(this.jugadorAsociado)){
+                    vista.mostrarMensaje("GANASTE!!!");
+                    vista.mensajeFinal(modelo.determinarGanador().getNombre());
+                    modelo.resultados();
+                }
+                else{
+                    vista.mostrarMensaje("El jugador " + modelo.determinarGanador().getNombre() + " gano la partida.");
+                }
+            }
+            case DECISION -> {
                 if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
                     int opcion = vista.mensajeReiniciarJuego();
                     this.manejarDesicion(opcion);

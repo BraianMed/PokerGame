@@ -1,7 +1,6 @@
 package ar.edu.unlu.vista;
 
 import ar.edu.unlu.controlador.PokerController;
-import ar.edu.unlu.modelo.Evento;
 
 import javax.swing.*;
 import java.awt.*;
@@ -69,7 +68,6 @@ public class JuegoPokerGui implements IVista {
         panel.add(scrollPane,BorderLayout.CENTER);  // se agrega al panel pasado por parámetro (panel principal en la zona central)
     }
 
-    @Override
     public void accionBotonEnviar() {
         botonEnviar.addActionListener(new ActionListener() {
             @Override
@@ -115,10 +113,12 @@ public class JuegoPokerGui implements IVista {
         chatArea.append(mensaje + "\n");
     }
 
+    @Override
     public void limpiarBarraTexto(){
         barraTexto.setText("");
     }
 
+    @Override
     public void limpiarTextoPlano(){
         chatArea.setText("");
     }

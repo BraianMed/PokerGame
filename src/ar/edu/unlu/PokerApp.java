@@ -5,6 +5,7 @@ import ar.edu.unlu.controlador.PokerController;
 import ar.edu.unlu.modelo.JuegoPoker;
 import ar.edu.unlu.vista.IVista;
 import ar.edu.unlu.vista.JuegoPokerGui;
+import ar.edu.unlu.vista.VistaGrafica;
 
 import java.util.ArrayList;
 
@@ -13,8 +14,24 @@ import static java.lang.System.exit;
 public class PokerApp {
     public ArrayList<PokerController> controladores;
     public String input;
+    public int opcion;
+
+    public void elegirTipoVentana(){
+        String opciones[] = {"Vista de consola","Vista Gráfica"};
+        this.opcion = JOptionPane.showOptionDialog(null,"Seleccione una vista: ","VISTA",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE,null,opciones,opciones[0]);
+        if (opcion == JOptionPane.YES_OPTION){
+            JOptionPane.showMessageDialog(null, "Elegiste la vista de consola!");
+        } else if (opcion == JOptionPane.NO_OPTION) {
+            JOptionPane.showMessageDialog(null, "Elegiste la vista gráfica!");
+        }
+        else if (opcion == JOptionPane.CLOSED_OPTION){
+            System.exit(0);
+        }
+    }
 
     public void iniciar() {
+        this.elegirTipoVentana();
+
         int cantidad = 0;
         while (cantidad < 2) { // Mínimo 2 jugadores
             input = JOptionPane.showInputDialog(null, "Ingrese la cantidad de jugadores: [2 a 6]");
@@ -35,12 +52,12 @@ public class PokerApp {
         this.controladores = new ArrayList<>();
         modelo.setCantidadJugadores(cantidad);
         for (int i = 0; i < cantidad; i++) {
-            IVista vista = new JuegoPokerGui();
+            IVista vista = (opcion == 0) ? new JuegoPokerGui() : new VistaGrafica();
             PokerController controlador = new PokerController(modelo, vista);
             this.controladores.add(controlador);
             vista.iniciarVentana();
-        }
 
+        }
         modelo.iniciarJuego();
     }
 }

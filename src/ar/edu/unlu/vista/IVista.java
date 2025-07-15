@@ -9,11 +9,13 @@ import java.util.ArrayList;
 public interface IVista {
     void iniciarVentana();
 
-    void accionBotonEnviar();
-
     void menuApuestas(boolean primerApostante, String nombre, int fichas);
 
     void mostrarMensaje(String mensaje);
+
+     void limpiarBarraTexto();
+
+    void limpiarTextoPlano();
 
     // setter de controlador para que el controller pueda autoasignarse a sí mismo en su constructor.
     void setControlador(PokerController controlador);

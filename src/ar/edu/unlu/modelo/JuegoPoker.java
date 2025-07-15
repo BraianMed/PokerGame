@@ -217,6 +217,13 @@ public class JuegoPoker implements IObservable{
         }
         return null;
     }
+
+    public void resultados(){
+        this.sumarVictorias();
+        this.sumarDerrotas();
+        notificar(Evento.DECISION);
+    }
+
     public void sumarVictorias(){
         Jugador ganador = determinarGanador();
         for (Jugador jugador : jugadores){
