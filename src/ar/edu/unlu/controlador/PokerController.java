@@ -388,8 +388,10 @@ public class PokerController implements IObservador{
 //                }
             }
             case JUGADORES_INGRESADOS -> {
-                vista.mostrarMensaje("Todos los jugadores se han registrado con éxito!");
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){modelo.configurarJuego();}
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                    vista.mostrarMensaje("Todos los jugadores se han registrado con éxito!");
+                    if (modelo.getAnfitrion().equals(this.jugadorAsociado)){modelo.configurarJuego();}
+                }
             }
             case CANT_FICHAS_INICIALES -> {
                 if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
@@ -401,9 +403,6 @@ public class PokerController implements IObservador{
                         salir = vista.opcionSalir();
                         if(this.manejarSalir(salir)){modelo.configurarJuego();}
                     }
-                }
-                else{
-                    vista.mostrarMensaje("El anfitrión esta configurando las reglas de la partida...");
                 }
             }
             case FICHAS_INICIALES -> {
