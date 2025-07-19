@@ -1,7 +1,10 @@
 package ar.edu.unlu.modelo;
 
-public class Ficha {
+import java.io.Serializable;
+
+public class Ficha implements Serializable {
     private int valor;
+    private static final long serialVersionUID = 5603087402016698850L;
 
     public Ficha(int valor){
         this.valor = valor;

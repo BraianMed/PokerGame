@@ -34,6 +34,7 @@ public class AppServidor {
         Servidor servidor = new Servidor(ip, Integer.parseInt(port));
         try {
             servidor.iniciar(modelo);
+//            modelo.iniciarJuego();
         } catch (RemoteException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

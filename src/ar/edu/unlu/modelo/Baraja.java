@@ -1,11 +1,13 @@
 package ar.edu.unlu.modelo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Baraja {
+public class Baraja implements Serializable {
     private List<Carta> cartas;
+    private static final long serialVersionUID = 7523953023192485649L;
 
     public Baraja() {
         cartas = new ArrayList<>();

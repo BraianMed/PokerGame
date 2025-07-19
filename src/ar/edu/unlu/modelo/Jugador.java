@@ -1,15 +1,16 @@
 package ar.edu.unlu.modelo;
 
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.*;
 
-public class Jugador extends Usuario implements IJugador {
+public class Jugador extends Usuario implements IJugador, Serializable {
     private Mano mano;
     private List<Ficha> fichas;
     private boolean enJuego;
     private List<Ficha> apuestaActual;
     private boolean primerApostante;
-
+    private static final long serialVersionUID = 7982955786453693865L;
     public Jugador(String nombre){
         super(nombre);
         this.enJuego = true;

@@ -1,10 +1,12 @@
 package ar.edu.unlu.modelo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Bote implements ICalcularFichas{
+public class Bote implements ICalcularFichas, Serializable {
     private List<Ficha> fichas;
+    private static final long serialVersionUID = -7934591226417571440L;
 
     public Bote(){
         this.fichas = new ArrayList<>();
