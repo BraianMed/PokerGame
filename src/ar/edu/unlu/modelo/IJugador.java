@@ -1,5 +1,6 @@
 package ar.edu.unlu.modelo;
 
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +17,7 @@ public interface IJugador extends ICalcularFichas {
 
     void recibirFichas(Ficha ficha);
 
-    void apostar(int cantidad, Bote bote);
+    void apostar(int cantidad, Bote bote) throws RemoteException;
 
     void descartar(ArrayList<Integer> indices);
 

@@ -1,15 +1,20 @@
 package ar.edu.unlu.controlador;
 
 import ar.edu.unlu.modelo.Evento;
+import ar.edu.unlu.modelo.IModelo;
 import ar.edu.unlu.modelo.JuegoPoker;
 import ar.edu.unlu.modelo.Jugador;
+import ar.edu.unlu.rmimvc.cliente.IControladorRemoto;
+import ar.edu.unlu.rmimvc.observer.IObservableRemoto;
+import ar.edu.unlu.rmimvc.observer.IObservadorRemoto;
 import ar.edu.unlu.vista.IVista;
 
 import javax.swing.*;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
-public class PokerController implements IObservador{
-    private JuegoPoker modelo;
+public class PokerController implements IControladorRemoto {
+    private IModelo modelo;
     private IVista vista;
     private Jugador jugadorAsociado;
     private String entrada;
@@ -19,31 +24,30 @@ public class PokerController implements IObservador{
     private int cantDescartadas;
     private Jugador ganador;
 
-    public PokerController(JuegoPoker modelo, IVista vista){
-        this.modelo = modelo;
+    public PokerController(IVista vista) throws RemoteException {
         this.vista = vista;
         vista.setControlador(this);
-        modelo.agregarObservador(this);
+        this.setModeloRemoto(modelo);
         this.indices = new ArrayList<>();
         this.cantDescarte = 0;
         this.cantDescartadas = 0;
     }
 
-    public String ganadorController(){
+    public String ganadorController() throws RemoteException {
         modelo.sumarVictorias();
         modelo.sumarDerrotas();
         return modelo.determinarGanador().getNombre();
     }
 
-    public String jugadorTurnoController(){
+    public String jugadorTurnoController() throws RemoteException {
         return modelo.nombreJugadorActual();
     }
 
-    public int apuestaActualController(){
+    public int apuestaActualController() throws RemoteException {
         return modelo.getApuestaActual();
     }
 
-    public void fichasInicialesController(String fichasIniciales){
+    public void fichasInicialesController(String fichasIniciales) throws RemoteException {
         try{
            int cantFichas = Integer.parseInt(fichasIniciales);
            if (cantFichas <= 0 ){
@@ -63,7 +67,7 @@ public class PokerController implements IObservador{
             modelo.configurarJuego();
         }
     }
-    public int valorFichaController(String entrada){
+    public int valorFichaController(String entrada) throws RemoteException {
         int valorFicha = -1;
         try {
             valorFicha = Integer.parseInt(entrada);
@@ -97,7 +101,7 @@ public class PokerController implements IObservador{
         }
         return valorFicha;
     }
-    public void validarCiega(String ciegaGrande){
+    public void validarCiega(String ciegaGrande) throws RemoteException {
         int ciega = 0;
         try{
             ciega = Integer.parseInt(ciegaGrande);
@@ -122,7 +126,7 @@ public class PokerController implements IObservador{
             System.out.println("error de tipo de dato");
         }
     }
-    public boolean validarSubir(int apuestaActual){
+    public boolean validarSubir(int apuestaActual) throws RemoteException {
         if (apuestaActual > modelo.getCiegaGrande()){
             return true;
         }
@@ -131,7 +135,7 @@ public class PokerController implements IObservador{
         }
     }
 
-    public boolean validarCiegasController(int ciegaActual){
+    public boolean validarCiegasController(int ciegaActual) throws RemoteException {
         if (ciegaActual > modelo.getJugadores().get(0).totalFichas() && (ciegaActual / 2) > modelo.getJugadores().get(0).totalFichas() ){
             return false;
         }
@@ -140,7 +144,7 @@ public class PokerController implements IObservador{
         }
     }
 
-    public void asignarCiegas(){
+    public void asignarCiegas() throws RemoteException {
         if (modelo.asignarCiegas()){    // si pudo asignar las fichas entonces muevo el repartidor.
             modelo.moverRepartidor();
 //            modelo.cartasObserver();
@@ -173,15 +177,15 @@ public class PokerController implements IObservador{
         return -1;
     }
 
-    public void reiniciarJuego(){
+    public void reiniciarJuego() throws RemoteException {
         modelo.reiniciarJuego();
     }
 
-    public JuegoPoker getModelo() {
+    public IModelo getModelo() {
         return modelo;
     }
 
-    public void comunicarEntrada(String input) {
+    public void comunicarEntrada(String input) throws RemoteException {
         System.out.println("comunicarEntrada: jugador=" + jugadorAsociado.getNombre()
                 + " turnoModelo=" + modelo.manejarTurnos().getNombre());
 
@@ -233,7 +237,7 @@ public class PokerController implements IObservador{
 //        this.modelo.recibirEntrada(entrada,this.jugadorAsociado);
     }
 
-    private boolean manejarIgualar(){
+    private boolean manejarIgualar() throws RemoteException {
         boolean resultado;
         try {
             modelo.igualarJugador();
@@ -247,7 +251,7 @@ public class PokerController implements IObservador{
         vista.mensajeIgualar(this.jugadorAsociado.getNombre());
         return resultado;
     }
-    public boolean manejarSubir(){
+    public boolean manejarSubir() throws RemoteException {
         String apuesta = vista.pedirApuesta();
         boolean resultado;
         int apuestaEntera = this.valorFichaApuesta(apuesta);
@@ -272,16 +276,16 @@ public class PokerController implements IObservador{
         return resultado;
     }
 
-    public void manejarPasar(){
+    public void manejarPasar() throws RemoteException {
         vista.mensajePaso(this.jugadorAsociado.getNombre());
     }
 
-    public void manejarRetirarse(){
+    public void manejarRetirarse() throws RemoteException {
         modelo.retirarJugador();
         vista.mensajeRetirado(this.jugadorAsociado.getNombre());
     }
 
-    public void manejarCantDescarte(){
+    public void manejarCantDescarte() throws RemoteException {
         if (this.cantDescarte != -1){
             if (this.cantDescarte == 0){
                 vista.mensajeSinDescarte(this.jugadorAsociado.getNombre());
@@ -298,7 +302,7 @@ public class PokerController implements IObservador{
         }
     }
 
-    public void manejarIndiceDescarte(String indice){
+    public void manejarIndiceDescarte(String indice) throws RemoteException {
         int indiceDescarte;
         try {
             indiceDescarte = Integer.parseInt(indice) - 1;
@@ -345,7 +349,7 @@ public class PokerController implements IObservador{
         }
         return resultado;
     }
-    public void manejarDesicion(int opcion){
+    public void manejarDesicion(int opcion) throws RemoteException {
 
         if (opcion == JOptionPane.YES_OPTION){
             this.modelo.reiniciarJuego();
@@ -358,7 +362,7 @@ public class PokerController implements IObservador{
     }
 
     @Override
-    public void actualizar(Object o) {
+    public void actualizar(IObservableRemoto observableRemoto,Object o) throws RemoteException {
         Evento eventoActual = (Evento) o;
         int salir = 0;
         switch (eventoActual){
@@ -493,5 +497,10 @@ public class PokerController implements IObservador{
             }
 
         }
+    }
+
+    @Override
+    public <T extends IObservableRemoto> void setModeloRemoto(T modeloRemoto) throws RemoteException {
+        this.modelo = (IModelo) modeloRemoto; // es necesario castear el modelo remoto
     }
 }

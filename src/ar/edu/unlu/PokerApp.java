@@ -2,11 +2,13 @@ package ar.edu.unlu;
 
 import javax.swing.JOptionPane;
 import ar.edu.unlu.controlador.PokerController;
+import ar.edu.unlu.modelo.IModelo;
 import ar.edu.unlu.modelo.JuegoPoker;
 import ar.edu.unlu.vista.IVista;
 import ar.edu.unlu.vista.JuegoPokerGui;
 import ar.edu.unlu.vista.VistaGrafica;
 
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 import static java.lang.System.exit;
@@ -29,7 +31,7 @@ public class PokerApp {
         }
     }
 
-    public void iniciar() {
+    public void iniciar() throws RemoteException {
         this.elegirTipoVentana();
 
         int cantidad = 0;
@@ -48,12 +50,13 @@ public class PokerApp {
             }
         }
 
-        JuegoPoker modelo = new JuegoPoker();
+        IModelo modelo = new JuegoPoker();
         this.controladores = new ArrayList<>();
         modelo.setCantidadJugadores(cantidad);
         for (int i = 0; i < cantidad; i++) {
             IVista vista = (opcion == 0) ? new JuegoPokerGui() : new VistaGrafica();
-            PokerController controlador = new PokerController(modelo, vista);
+            PokerController controlador = new PokerController(vista);
+            controlador.setModeloRemoto(modelo);
             this.controladores.add(controlador);
             vista.iniciarVentana();
 

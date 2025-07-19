@@ -4,6 +4,7 @@ import ar.edu.unlu.controlador.PokerController;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 public interface IVista {
@@ -38,13 +39,13 @@ public interface IVista {
 
     void mensajeTurnoActual(String nombre);
 
-    String pedirApuesta();
+    String pedirApuesta() throws RemoteException;
 
     void mensajeAposto(String nombre);
 
-    void mensajePaso(String nombre);
+    void mensajePaso(String nombre) throws RemoteException;
 
-    void mensajeRetirado(String nombre);
+    void mensajeRetirado(String nombre) throws RemoteException;
 
     void mensajeErrorIgualar(String nombre, int apuesta, int totalFichas);
 

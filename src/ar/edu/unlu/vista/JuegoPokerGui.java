@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 public class JuegoPokerGui implements IVista {
@@ -72,7 +73,11 @@ public class JuegoPokerGui implements IVista {
         botonEnviar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                controlador.comunicarEntrada(barraTexto.getText().trim());
+                try {
+                    controlador.comunicarEntrada(barraTexto.getText().trim());
+                } catch (RemoteException ex) {
+                    throw new RuntimeException(ex);
+                }
                 System.out.println("capturado");
 //                entrada = barraTexto.getText().trim();
                 barraTexto.setText(""); // Limpiar el texto después de obtener el valor
@@ -166,7 +171,7 @@ public class JuegoPokerGui implements IVista {
         this.mostrarMensaje("Es el turno del jugador " + nombre + ", espere su turno...");
     }
     @Override
-    public String pedirApuesta(){
+    public String pedirApuesta() throws RemoteException {
         return JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]");
     }
     @Override
@@ -174,11 +179,11 @@ public class JuegoPokerGui implements IVista {
         this.mostrarMensaje("El jugador " + nombre + " apostó exitosamente.");
     }
     @Override
-    public void mensajePaso(String nombre){
+    public void mensajePaso(String nombre) throws RemoteException {
         mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " decidió pasar.");
     }
     @Override
-    public void mensajeRetirado(String nombre){
+    public void mensajeRetirado(String nombre) throws RemoteException {
         mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " se retiro de la partida.");
     }
     @Override

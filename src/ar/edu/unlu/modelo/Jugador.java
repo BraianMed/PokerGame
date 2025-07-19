@@ -1,5 +1,6 @@
 package ar.edu.unlu.modelo;
 
+import java.rmi.RemoteException;
 import java.util.*;
 
 public class Jugador extends Usuario implements IJugador {
@@ -81,7 +82,7 @@ public class Jugador extends Usuario implements IJugador {
     }
 
     @Override
-    public void apostar(int cantidad, Bote bote) throws IllegalArgumentException{
+    public void apostar(int cantidad, Bote bote) throws RemoteException {
         if (cantidad > totalFichas()){
             throw new IllegalArgumentException("No tienes suficiente fichas");
         }

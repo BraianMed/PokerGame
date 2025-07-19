@@ -2,11 +2,13 @@ package ar.edu.unlu.modelo;
 
 
 import ar.edu.unlu.controlador.IObservador;
+import ar.edu.unlu.rmimvc.observer.ObservableRemoto;
 
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JuegoPoker implements IObservable{
+public class JuegoPoker extends ObservableRemoto implements IModelo {
     private List<Jugador> jugadores;
     private int cantidadJugadores;
     private int jugadoresRegistrados;
@@ -18,7 +20,7 @@ public class JuegoPoker implements IObservable{
     private Ficha ciegaGrande;
     private int posRepartidor;
     private ArrayList<Ficha> fichasIniciales;
-    private ArrayList<IObservador> observadores;
+//    private ArrayList<IObservador> observadores;
     private int apuestaActual;
     private int turno;
     private Jugador anfitrion;
@@ -37,7 +39,7 @@ public class JuegoPoker implements IObservable{
         this.bote = new Bote();
         this.posRepartidor = 0;
         this.fichasIniciales = new ArrayList<>();
-        this.observadores = new ArrayList<>();
+//        this.observadores = new ArrayList<>();
         this.turno = 0;
         this.apuestaActual = 0;
         this.error = false;
@@ -47,17 +49,20 @@ public class JuegoPoker implements IObservable{
         this.accionesContadas = 0;
     }
 
-    public void iniciarJuego(){
-        notificar(Evento.NOMBRE_JUGADOR);
+    @Override
+    public void iniciarJuego() throws RemoteException {
+        notificarObservadores(Evento.NOMBRE_JUGADOR);
     }
 
+    @Override
     public void moverRepartidor(){
         // hacemos módulo por el tamaño de la lista de jugadores para que cuando llegue al final vuelva al inicio de la lista como una cola circular
         // el resto de la división dara como resultado un número entre 0 y la cantidad de jugadores (perfecto para el índice)
         this.posRepartidor = (this.posRepartidor + 1) % jugadores.size();
     }
 
-    public boolean asignarCiegas(){
+    @Override
+    public boolean asignarCiegas() throws RemoteException {
         if (!jugadores.isEmpty()){
             int posCiegaChica = 0;
             int posCiegaGrande = 0;
@@ -86,44 +91,50 @@ public class JuegoPoker implements IObservable{
 
             this.apuestaActual = ciegaGrande.getValor();
 
-            notificar(Evento.REPARTIR_CARTAS);
+            notificarObservadores(Evento.REPARTIR_CARTAS);
             return true;
         }
         return false;
     }
 
-    public void errorCiega(){
-        notificar(Evento.VALOR_CIEGAS);
+    @Override
+    public void errorCiega() throws RemoteException {
+        notificarObservadores(Evento.VALOR_CIEGAS);
     }
 
+    @Override
     public boolean jugadoresIsEmpty(){
         return jugadores.isEmpty();
     }
 
-    public void repartirCartas(){
+    @Override
+    public void repartirCartas() throws RemoteException {
         if (!jugadores.isEmpty()){
             for (Jugador jugador : jugadores){
                 baraja.repartirCarta(jugador);
                 jugador.definirManoJugador();
             }
-            notificar(Evento.MOSTRAR_CARTAS);
+            notificarObservadores(Evento.MOSTRAR_CARTAS);
             System.out.println("cartas repartidas, y luego notifica a mostrar cartas");
         }
         else{
             this.error = true;
-            notificar(Evento.NOMBRE_JUGADOR);
+            notificarObservadores(Evento.NOMBRE_JUGADOR);
         }
     }
 
+    @Override
     public String nombreJugadorActual(){
         return manejarTurnos().getNombre();
     }
 
+    @Override
     public ArrayList<String> cartasTurnoActual(){
 //        notificar(Evento.MOSTRAR_CARTAS);
         this.cartasTurnoActual = manejarTurnos().devolverCartas();
         return manejarTurnos().devolverCartas();
     }
+    @Override
     public void repartirFichas() {
         for (Jugador jugador : jugadores) {
             // Clonar la lista
@@ -136,11 +147,13 @@ public class JuegoPoker implements IObservable{
 //        notificar(Evento.FICHAS_REPARTIDAS);
     }
 
+    @Override
     public void descartarJugador(ArrayList<Integer> indices){
         jugadores.get(getTurno()).descartar(indices);
     }
 
-    public void gestionVuelta() {
+    @Override
+    public void gestionVuelta() throws RemoteException {
         int activos = cantJugadoresEnJuego();
         if (activos == 0) return;
 
@@ -152,19 +165,19 @@ public class JuegoPoker implements IObservable{
             if (accionesContadas < totalAcciones1) {
                 // Si la acción recién contada es impar → acabamos de apostar → pedimos descarte
                 if (accionesContadas % 2 == 1) {
-                    notificar(Evento.CANT_DESCARTE);
+                    notificarObservadores(Evento.CANT_DESCARTE);
                 }
                 // Si es par → acabamos de descartar → avanzamos al siguiente jugador para apostar
                 else {
                     siguienteTurno();
-                    notificar(Evento.MOSTRAR_CARTAS);
+                    notificarObservadores(Evento.MOSTRAR_CARTAS);
                 }
             } else {
                 // Se completaron todas las apuestas+descartes de la primera vuelta
                 primeraVuelta = false;
                 accionesContadas = 0;            // reiniciar contador para fase 2
                 siguienteTurno();                // pasa al primer jugador de la 2ª ronda
-                notificar(Evento.APUESTA);       // fase 2: todos apuestan
+                notificarObservadores(Evento.APUESTA);       // fase 2: todos apuestan
             }
         }
         else {
@@ -172,14 +185,15 @@ public class JuegoPoker implements IObservable{
             int totalAcciones2 = activos;
             if (accionesContadas < totalAcciones2) {
                 siguienteTurno();
-                notificar(Evento.APUESTA);
+                notificarObservadores(Evento.APUESTA);
             } else {
                 // Fin de la segunda vuelta
-                notificar(Evento.DEFINIR_GANADORES);
+                notificarObservadores(Evento.DEFINIR_GANADORES);
             }
         }
     }
 
+    @Override
     public int cantJugadoresEnJuego(){
         int contador = 0;
         for (Jugador jugador : jugadores){
@@ -189,7 +203,8 @@ public class JuegoPoker implements IObservable{
         }
         return contador;
     }
-    public void reiniciarJuego(){
+    @Override
+    public void reiniciarJuego() throws RemoteException {
         this.primeraVuelta = true;
         this.baraja = new Baraja();
         this.bote = new Bote();
@@ -208,6 +223,7 @@ public class JuegoPoker implements IObservable{
         this.configurarJuego();
     }
 
+    @Override
     public Jugador determinarGanador(){
         Mano ganadorMano = manoGanadora();
         for (Jugador j : jugadores){
@@ -218,12 +234,14 @@ public class JuegoPoker implements IObservable{
         return null;
     }
 
-    public void resultados(){
+    @Override
+    public void resultados() throws RemoteException {
         this.sumarVictorias();
         this.sumarDerrotas();
-        notificar(Evento.DECISION);
+        notificarObservadores(Evento.DECISION);
     }
 
+    @Override
     public void sumarVictorias(){
         Jugador ganador = determinarGanador();
         for (Jugador jugador : jugadores){
@@ -232,6 +250,7 @@ public class JuegoPoker implements IObservable{
             }
         }
     }
+    @Override
     public void sumarDerrotas(){
         Jugador ganador = determinarGanador();
         for (Jugador jugador : jugadores){
@@ -240,6 +259,7 @@ public class JuegoPoker implements IObservable{
             }
         }
     }
+    @Override
     public Mano manoGanadora() {
         Mano mejorMano = jugadores.get(0).getMano();
         for (int i = 1; i < jugadores.size(); i++) {
@@ -249,23 +269,28 @@ public class JuegoPoker implements IObservable{
         return mejorMano;
     }
 
-    public void igualarJugador(){
+    @Override
+    public void igualarJugador() throws RemoteException {
         jugadores.get(getTurno()).apostar(apuestaActual,bote);
         this.apuestaActual = this.apuestaActual + apuestaActual;
     }
+    @Override
     public Jugador manejarTurnos(){
         return jugadores.get(getTurno());
     }
+    @Override
     public void retirarJugador(){
         jugadores.get(getTurno()).retirarse();
     }
 
-    public void apostarJugador(int cantidad) throws IllegalArgumentException{
+    @Override
+    public void apostarJugador(int cantidad) throws IllegalArgumentException, RemoteException {
         jugadores.get(getTurno()).apostar(cantidad,bote);
         this.apuestaActual = cantidad;
 //        notificar(Evento.APUESTA);
     }
 
+    @Override
     public Jugador agregarJugador(String nombre) {
         int maxJugadores = 6; // Límite superior
 
@@ -287,73 +312,81 @@ public class JuegoPoker implements IObservable{
         return actual;
     }
 
-    public void agregarJugadores(ArrayList<String> nombres){
+    @Override
+    public void agregarJugadores(ArrayList<String> nombres) throws RemoteException {
         for (String nombre : nombres){
             agregarJugador(nombre);
         }
-        notificar(Evento.NOMBRE_JUGADOR);
+        notificarObservadores(Evento.NOMBRE_JUGADOR);
     }
+
+//    @Override
+//    public void agregarObservador(IObservador observador) {
+//        observadores.add(observador);
+//    }
+//
+//    @Override
+//    public void eliminarObservador(IObservador observador) {
+//        observadores.remove(observador);
+//    }
+//
+//    @Override
+//    public void notificar(Object o) {
+//        for (IObservador observador: observadores){
+//            observador.actualizar(o);
+//        }
+//    }
 
     @Override
-    public void agregarObservador(IObservador observador) {
-        observadores.add(observador);
-    }
-
-    @Override
-    public void eliminarObservador(IObservador observador) {
-        observadores.remove(observador);
-    }
-
-    @Override
-    public void notificar(Object o) {
-        for (IObservador observador: observadores){
-            observador.actualizar(o);
-        }
-    }
-
-    public void configurarJuego(){
+    public void configurarJuego() throws RemoteException {
 //        System.out.println("debug");
-        notificar(Evento.CANT_FICHAS_INICIALES);
+        notificarObservadores(Evento.CANT_FICHAS_INICIALES);
     }
 
+    @Override
     public List<Jugador> getJugadores() {
         return jugadores;
     }
 
-    public void agregarFicha(int valor){
+    @Override
+    public void agregarFicha(int valor) throws RemoteException {
         if (fichasIniciales.size() != this.cantFichas){
             this.fichasIniciales.add(new Ficha(valor));
             if (fichasIniciales.size() != this.cantFichas){
-                notificar(Evento.FICHAS_INICIALES);
+                notificarObservadores(Evento.FICHAS_INICIALES);
             }
             else{
                 this.repartirFichas();
-                notificar(Evento.VALOR_CIEGAS);
+                notificarObservadores(Evento.VALOR_CIEGAS);
             }
         }
         else{
             System.out.println("debug");
-            notificar(Evento.VALOR_CIEGAS);
+            notificarObservadores(Evento.VALOR_CIEGAS);
         }
     }
 
-    public void valorFichas(){
-        notificar(Evento.FICHAS_INICIALES);
+    @Override
+    public void valorFichas() throws RemoteException {
+        notificarObservadores(Evento.FICHAS_INICIALES);
     }
 
-    public void agregarFichas(ArrayList<Integer> valores){
+    @Override
+    public void agregarFichas(ArrayList<Integer> valores) throws RemoteException {
         for (Integer valorFicha : valores){
             agregarFicha(valorFicha);
         }
-        notificar(Evento.FICHAS_INICIALES);
+        notificarObservadores(Evento.FICHAS_INICIALES);
     }
-    public void inicializarCiegas(int ciegaChica,int ciegaGrande){
+    @Override
+    public void inicializarCiegas(int ciegaChica, int ciegaGrande){
         this.ciegaChica = new Ficha(ciegaChica);
         this.ciegaGrande = new Ficha(ciegaGrande);
         System.out.println(this.ciegaChica.getValor());
         System.out.println(this.ciegaGrande.getValor());
     }
 
+    @Override
     public int siguienteTurno() {
         if (jugadores.isEmpty()){
             throw new IllegalStateException("No hay jugadores en la lista.");
@@ -374,60 +407,67 @@ public class JuegoPoker implements IObservable{
 
         return turno;
     }
-    private void avanzarTurno() {
-        do {
-            turnoActual = (turnoActual + 1) % jugadores.size();
-        } while (!jugadores.get(turnoActual).isEnJuego());
-    }
 
+    @Override
     public int getCiegaGrande() {
         return ciegaGrande.getValor();
     }
 
+    @Override
     public int getTurno() {
         return turno;
     }
 
-    public void verificarJugadoresListos(){
+    @Override
+    public void verificarJugadoresListos() throws RemoteException {
         if (jugadoresRegistrados == cantidadJugadores) {
-            notificar(Evento.JUGADORES_INGRESADOS);
+            notificarObservadores(Evento.JUGADORES_INGRESADOS);
         }
         else{
-            notificar(Evento.NOMBRE_JUGADOR);
+            notificarObservadores(Evento.NOMBRE_JUGADOR);
         }
     }
-    public int getApuestaActual() {
+    @Override
+    public int getApuestaActual(){
         return apuestaActual;
     }
 
+    @Override
     public Jugador getJugadorTurno() {
         return jugadores.get(getTurno());
     }
 
+    @Override
     public void setCantFichas(int cantFichas) {
         this.cantFichas = cantFichas;
     }
 
+    @Override
     public Jugador getAnfitrion() {
         return anfitrion;
     }
 
+    @Override
     public void setCantidadJugadores(int cantidadJugadores) {
         this.cantidadJugadores = cantidadJugadores;
     }
 
+    @Override
     public int getJugadoresRegistrados() {
         return jugadoresRegistrados;
     }
 
+    @Override
     public int totalApostadoBote(){
         return this.bote.totalFichas();
     }
 
+    @Override
     public boolean isError() {
         return error;
     }
 
+    @Override
     public void setError(boolean error) {
         this.error = error;
     }

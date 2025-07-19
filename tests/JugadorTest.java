@@ -4,6 +4,8 @@ import ar.edu.unlu.modelo.Jugador;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
+import java.rmi.RemoteException;
+
 public class JugadorTest {
 
     @Test
@@ -20,7 +22,7 @@ public class JugadorTest {
         assertEquals(jugador.totalFichas(),500);
     }
     @Test
-    public void validarApostar(){
+    public void validarApostar() throws RemoteException {
         Jugador jugador = new Jugador("Pedro");
         Bote bote = new Bote();
         Ficha f1 = new Ficha(100);

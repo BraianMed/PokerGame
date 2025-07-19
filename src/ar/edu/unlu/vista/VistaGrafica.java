@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,8 +21,7 @@ public class VistaGrafica implements IVista{
 
     private PokerController controlador;    // controlador
     private JFrame frame;   // ventana principal
-    private JTextArea chatArea; // texto plano en la zona central
-    private JTextField barraTexto;  // barra de texto en la zona inferior
+
     private JButton apostar;
     private JButton igualar;
     private JButton pasar;
@@ -318,19 +318,43 @@ public class VistaGrafica implements IVista{
 
     public void accionBotonApuesta(){
         deshabilitarBotones();
-        this.apostar.addActionListener(e -> controlador.comunicarEntrada("subir"));
+        this.apostar.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("subir");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
     public void accionBotonIgualar(){
         deshabilitarBotones();
-        this.igualar.addActionListener(e -> controlador.comunicarEntrada("igualar"));
+        this.igualar.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("igualar");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
     public void accionBotonPasar(){
         deshabilitarBotones();
-        this.pasar.addActionListener(e -> controlador.comunicarEntrada("pasar"));
+        this.pasar.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("pasar");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
     public void accionBotonRetirarse(){
         deshabilitarBotones();
-        this.retirarse.addActionListener(e -> controlador.comunicarEntrada("retirarse"));
+        this.retirarse.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("retirarse");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
     private void deshabilitarBotones() {
         this.apostar.setEnabled(false);
@@ -483,7 +507,7 @@ public class VistaGrafica implements IVista{
     }
 
     @Override
-    public String pedirApuesta(){
+    public String pedirApuesta() throws RemoteException {
         return JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]");
     }
 
@@ -493,12 +517,12 @@ public class VistaGrafica implements IVista{
     }
 
     @Override
-    public void mensajePaso(String nombre){
+    public void mensajePaso(String nombre) throws RemoteException {
         mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " decidió pasar.");
     }
 
     @Override
-    public void mensajeRetirado(String nombre){
+    public void mensajeRetirado(String nombre) throws RemoteException {
         mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " se retiro de la partida.");
     }
 
@@ -538,12 +562,48 @@ public class VistaGrafica implements IVista{
     }
 
     private void accionBtnDescarte(){
-        this.btnDescarte0.addActionListener(e -> controlador.comunicarEntrada("0"));
-        this.btnDescarte1.addActionListener(e -> controlador.comunicarEntrada("1"));
-        this.btnDescarte2.addActionListener(e -> controlador.comunicarEntrada("2"));
-        this.btnDescarte3.addActionListener(e -> controlador.comunicarEntrada("3"));
-        this.btnDescarte4.addActionListener(e -> controlador.comunicarEntrada("4"));
-        this.btnDescarte5.addActionListener(e -> controlador.comunicarEntrada("5"));
+        this.btnDescarte0.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("0");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        this.btnDescarte1.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("1");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        this.btnDescarte2.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("2");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        this.btnDescarte3.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("3");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        this.btnDescarte4.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("4");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        this.btnDescarte5.addActionListener(e -> {
+            try {
+                controlador.comunicarEntrada("5");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
 
     @Override
