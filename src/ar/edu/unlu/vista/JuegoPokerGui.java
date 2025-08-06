@@ -18,7 +18,7 @@ public class JuegoPokerGui implements IVista {
     private JButton botonEnviar;    // botón de enviar en la zona inferior
 
     @Override
-    public void iniciarVentana(){
+    public void iniciarVentana() throws RemoteException {
         frame = new JFrame("Poker");
         frame.setSize(400,400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);   // para cerrar el script una vez cerrada la ventana.
@@ -29,6 +29,7 @@ public class JuegoPokerGui implements IVista {
 //        accionBotonEnviar();
         this.accionBotonEnviar();
         frame.setVisible(true); // pongo la visibilidad del frame en true.
+        controlador.comunicarEntrada(this.pedirNombreJugador());
     }
 
     public JPanel panelPrincipal(){
@@ -52,8 +53,6 @@ public class JuegoPokerGui implements IVista {
 
         panel.add(barraTexto);  // agrego los componentes al panel que recibe (panel inferior)
         panel.add(botonEnviar);
-
-
     }
 
     public void componentesPanelCentral(JPanel panel){
@@ -84,6 +83,17 @@ public class JuegoPokerGui implements IVista {
 //                barraTexto.requestFocusInWindow();
             }
         });
+    }
+
+    public void solicitarNombreJugador() throws RemoteException {
+        if (controlador != null) {
+            String nombre = pedirNombreJugador();
+            if (nombre != null && !nombre.trim().isEmpty()) {
+                controlador.registrarJugador(nombre);
+            } else {
+                controlador.manejarSalir(opcionSalir());
+            }
+        }
     }
 
     public void setEnviarListener(ActionListener listener) {
@@ -154,6 +164,12 @@ public class JuegoPokerGui implements IVista {
     public void mensajeError(){
         JOptionPane.showMessageDialog(null,"ERROR AL INGRESAR EL DATO -> REINTENTAR NUEVAMENTE");
     }
+
+    @Override
+    public void mensajeFaltanJugadores() {
+        JOptionPane.showMessageDialog(null,"Faltan jugadores en la partida...");
+    }
+
     @Override
     public void mostrarCartas(ArrayList<String> cartas){
         this.mostrarMensaje("Tus cartas son: " + cartas.toString());

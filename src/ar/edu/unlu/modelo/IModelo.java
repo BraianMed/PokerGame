@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public interface IModelo extends IObservableRemoto {
-    void iniciarJuego() throws RemoteException;
-
     void moverRepartidor() throws RemoteException;
 
     boolean asignarCiegas() throws RemoteException;

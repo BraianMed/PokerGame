@@ -57,6 +57,7 @@ public class AppCliente {
         IVista vista = (opcion == 0) ? new VistaGrafica() : new JuegoPokerGui();
         PokerController controlador = new PokerController(vista);
         Cliente c = new Cliente(ip, Integer.parseInt(port), ipServidor, Integer.parseInt(portServidor));
+        vista.setControlador(controlador);
         vista.iniciarVentana();
         try {
             c.iniciar(controlador);

@@ -29,6 +29,7 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
     private ArrayList<String> cartasTurnoActual;
     private int turnoAnterior;
     private int accionesContadas;
+    private static JuegoPoker instancia;
 
     public JuegoPoker(){
         this.jugadores = new ArrayList<>();
@@ -49,9 +50,11 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
         this.accionesContadas = 0;
     }
 
-    @Override
-    public void iniciarJuego() throws RemoteException {
-        notificarObservadores(Evento.NOMBRE_JUGADOR);
+    public static JuegoPoker getInstancia() {
+        if (instancia == null){
+            instancia = new JuegoPoker();
+        }
+        return instancia;
     }
 
     @Override
@@ -119,7 +122,7 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
         }
         else{
             this.error = true;
-            notificarObservadores(Evento.NOMBRE_JUGADOR);
+            notificarObservadores(Evento.FALTAN_JUGADORES);
         }
     }
 
@@ -423,9 +426,9 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
         if (jugadoresRegistrados == cantidadJugadores) {
             notificarObservadores(Evento.JUGADORES_INGRESADOS);
         }
-        else{
-            notificarObservadores(Evento.NOMBRE_JUGADOR);
-        }
+//        else{
+//            notificarObservadores(Evento.NOMBRE_JUGADOR);
+//        }
     }
     @Override
     public int getApuestaActual(){

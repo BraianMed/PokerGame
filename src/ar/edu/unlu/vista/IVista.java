@@ -8,7 +8,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 public interface IVista {
-    void iniciarVentana();
+    void iniciarVentana() throws RemoteException;
 
     void menuApuestas(boolean primerApostante, String nombre, int fichas);
 
@@ -30,6 +30,8 @@ public interface IVista {
     String pedirCiegaGrande();
 
     void mensajeError();
+
+    void mensajeFaltanJugadores();
 
     void mostrarCartas(ArrayList<String> cartas);
 

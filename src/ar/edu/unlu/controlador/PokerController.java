@@ -1,9 +1,6 @@
 package ar.edu.unlu.controlador;
 
-import ar.edu.unlu.modelo.Evento;
-import ar.edu.unlu.modelo.IModelo;
-import ar.edu.unlu.modelo.JuegoPoker;
-import ar.edu.unlu.modelo.Jugador;
+import ar.edu.unlu.modelo.*;
 import ar.edu.unlu.rmimvc.cliente.IControladorRemoto;
 import ar.edu.unlu.rmimvc.observer.IObservableRemoto;
 import ar.edu.unlu.rmimvc.observer.IObservadorRemoto;
@@ -26,8 +23,7 @@ public class PokerController implements IControladorRemoto {
 
     public PokerController(IVista vista) throws RemoteException {
         this.vista = vista;
-        vista.setControlador(this);
-        this.setModeloRemoto(modelo);
+//        this.setModeloRemoto(modelo);
         this.indices = new ArrayList<>();
         this.cantDescarte = 0;
         this.cantDescartadas = 0;
@@ -186,9 +182,21 @@ public class PokerController implements IControladorRemoto {
     }
 
     public void comunicarEntrada(String input) throws RemoteException {
-        System.out.println("comunicarEntrada: jugador=" + jugadorAsociado.getNombre()
-                + " turnoModelo=" + modelo.manejarTurnos().getNombre());
 
+        int salir = 0;
+        if(this.jugadorAsociado == null) {
+            if (input != null) {
+                this.jugadorAsociado = modelo.agregarJugador(input);
+                System.out.println(this.jugadorAsociado.getNombre());
+                this.modelo.verificarJugadoresListos();
+
+            } else {
+                salir = vista.opcionSalir();
+                if (this.manejarSalir(salir)) {
+                    this.modelo.verificarJugadoresListos();
+                }
+            }
+        }
         if (eventoActual.equals(Evento.APUESTA)){
             if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
                 switch (input.toLowerCase()){
@@ -366,30 +374,16 @@ public class PokerController implements IControladorRemoto {
         Evento eventoActual = (Evento) o;
         int salir = 0;
         switch (eventoActual){
-            case NOMBRE_JUGADOR -> {
-                if (modelo.isError()){
-                    vista.mensajeError();
-                    modelo.setError(false);
-                }
-                if(this.jugadorAsociado == null) {
-                    String actual = vista.pedirNombreJugador();
-                    if (actual != null) {
-                        this.jugadorAsociado = modelo.agregarJugador(actual);
-                        System.out.println(this.jugadorAsociado.getNombre());
-                        this.modelo.verificarJugadoresListos();
-//                    if (this.jugadorAsociado == null){
-//                        // ver que hacer cuando se llega al limite de jugadores
-//                    }
-                    } else {
-                        salir = vista.opcionSalir();
-                        if (this.manejarSalir(salir)) {
-                            this.modelo.verificarJugadoresListos();
-                        }
+
+            case FALTAN_JUGADORES -> {
+                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                    if (modelo.isError()){
+                        vista.mensajeError();
+                        modelo.setError(false);
+                        vista.mensajeFaltanJugadores();
+                        System.exit(0);
                     }
                 }
-//                else{
-//                    vista.mostrarMensaje("Ya se ha ingresado un jugador con el nombre: " + this.jugadorAsociado.getNombre());
-//                }
             }
             case JUGADORES_INGRESADOS -> {
                 if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
@@ -502,5 +496,9 @@ public class PokerController implements IControladorRemoto {
     @Override
     public <T extends IObservableRemoto> void setModeloRemoto(T modeloRemoto) throws RemoteException {
         this.modelo = (IModelo) modeloRemoto; // es necesario castear el modelo remoto
+    }
+
+    public void registrarJugador(String nombre) throws RemoteException {
+        this.modelo.agregarJugador(nombre);
     }
 }

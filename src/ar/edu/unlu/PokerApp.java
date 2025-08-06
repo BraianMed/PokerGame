@@ -61,6 +61,6 @@ public class PokerApp {
             vista.iniciarVentana();
 
         }
-        modelo.iniciarJuego();
+//        modelo.iniciarJuego();
     }
 }

@@ -453,6 +453,11 @@ public class VistaGrafica implements IVista{
     }
 
     @Override
+    public void mensajeFaltanJugadores() {
+        JOptionPane.showMessageDialog(null,"Faltan jugadores en la partida...");
+    }
+
+    @Override
     public void mostrarCartas(ArrayList<String> cartas) {
         // Obtener el panel principal
         JPanel mainPanel = (JPanel) frame.getContentPane().getComponent(0);
