@@ -1,5 +1,6 @@
 package ar.edu.unlu.modelo;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.*;
@@ -10,6 +11,7 @@ public class Jugador extends Usuario implements IJugador, Serializable {
     private boolean enJuego;
     private List<Ficha> apuestaActual;
     private boolean primerApostante;
+    @Serial
     private static final long serialVersionUID = 7982955786453693865L;
     public Jugador(String nombre){
         super(nombre);
@@ -62,18 +64,18 @@ public class Jugador extends Usuario implements IJugador, Serializable {
         // mientras tenga siguiente en fichas y la sumatoria no llegue a igualar la cantidad a restar
         while (iterador.hasNext() && sumatoria != cantidad) {
             Ficha f = iterador.next();
+            int faltante = cantidad - sumatoria;
             // si el valor de la ficha actual menos la cantidad requerida es menor o igual a cero entonces la borro
             // e incremento sumatoria para ir guardando cuanto voy restando.
-            if (f.getValor() - cantidad <= 0) {
+            if (f.getValor() <= faltante) {
                 sumatoria += f.getValor();
                 iterador.remove();
                 // si la resta da mayor a cero entonces obtengo la diferencia que me falta para completar la cantidad total
                 // actualizo sumatoria sumándole lo que me faltaba para completar la cantidad requerida y me quite del while
                 // luego actualizo el valor de la ficha que era mayor que la cantidad para que quede la cantidad restada por la diferencia.
             } else {
-                int diferencia = cantidad - sumatoria;
-                sumatoria += f.getValor() - sumatoria;
-                f.setValor((f.getValor()) - (diferencia) );
+                sumatoria += faltante;
+                f.setValor(f.getValor() - faltante);
             }
         }
     }
@@ -93,8 +95,9 @@ public class Jugador extends Usuario implements IJugador, Serializable {
         // si sumatoria es igual que cantidad entonces quiere decir que ya aposto la cantidad necesaria.
         while (iterador.hasNext() && sumatoria != cantidad){
             Ficha f = iterador.next();
+            int faltante = cantidad - sumatoria;
             // si el valor de la ficha del jugador es menor o igual a la cantidad se suma al bote la ficha actual y se eliminan del jugador.
-            if (f.getValor() <= cantidad){
+            if (f.getValor() <= faltante){
                 bote.sumarFichas(f);
                 sumatoria += f.getValor();
                 apuestaActual.add(f);
@@ -103,13 +106,17 @@ public class Jugador extends Usuario implements IJugador, Serializable {
             // si diera el caso que el valor de la ficha es mayor a la apuesta entonces se le suma al bote una ficha con el valor de:
             // la diferencia entre la cantidad a apostar y lo que lleva apostando para poder completar la cantidad requerida.
             else{
-                int diferencia = cantidad - sumatoria;
-                bote.sumarFichas(new Ficha(cantidad - sumatoria));  // se suma al bote la diferencia
-                apuestaActual.add(new Ficha(cantidad - sumatoria)); // también se suma a la apuestaActual
-                sumatoria += cantidad - sumatoria;  // actualizo sumatoria para que me quite del while
-                f.setValor(f.getValor() - (diferencia) ); // se actualiza el valor a lo que ya tenía, menos lo que faltaba agregar a la apuesta
+                Ficha fichaApostada = new Ficha(faltante);
+                bote.sumarFichas(fichaApostada);  // se suma al bote la diferencia
+                apuestaActual.add(fichaApostada); // también se suma a la apuestaActual
+                sumatoria += faltante;  // actualizo sumatoria para que me quite del while
+                f.setValor(f.getValor() - faltante); // se actualiza el valor a lo que ya tenía, menos lo que faltaba agregar a la apuesta
             }
         }
+    }
+
+    public void limpiarApuestaActual(){
+        apuestaActual.clear();
     }
 
     @Override
@@ -128,6 +135,7 @@ public class Jugador extends Usuario implements IJugador, Serializable {
             // agrego la nueva carta aleatoria a su mano.
             mano.getCartas().add(new Carta(valores[indiceAleatorio],pintas[indiceAleatorioPinta]) );
         }
+        mano.definirMano();
 
     }
 

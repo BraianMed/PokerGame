@@ -1,6 +1,11 @@
 package ar.edu.unlu.modelo;
 
-public class Carta implements Comparable<Carta>{
+import java.io.Serial;
+import java.io.Serializable;
+
+public class Carta implements Comparable<Carta>, Serializable {
+    @Serial
+    private static final long serialVersionUID = 2293635350436981108L;
     private CartaValor valor;
     private Pinta pinta;
 

@@ -1,8 +1,12 @@
 package ar.edu.unlu.modelo;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 
-public class Mano implements Comparable<Mano>{
+public class Mano implements Comparable<Mano>, Serializable {
+    @Serial
+    private static final long serialVersionUID = 6133904184710324468L;
     private TipoDeMano tipoDeMano;
     private ArrayList<Carta> cartas;
     private int valorMano;
@@ -28,6 +32,7 @@ public class Mano implements Comparable<Mano>{
      }
 
     public void definirMano() {
+        this.tipoDeMano = null;
         // comienzo verificando desde la mano más alta hacia la más baja
         // en caso de que se diera un tipo de mano entonces se asigna al tipo de mano de la instancia actual y retorna.
         if (esEscaleraReal()) {
@@ -246,7 +251,7 @@ public class Mano implements Comparable<Mano>{
         if (o == null || getClass() != o.getClass()) return false;
         Mano mano = (Mano) o;
         // si no, comparo que las cartas de ambas manos sean iguales al mismo tiempo que los tipoDeMano.
-        return cartas.equals(mano.cartas) && tipoDeMano.equals(mano.tipoDeMano);
+        return cartas.equals(mano.cartas) && Objects.equals(tipoDeMano, mano.tipoDeMano);
     }
 
     @Override
@@ -255,6 +260,22 @@ public class Mano implements Comparable<Mano>{
         int tipoComparacion = this.tipoDeMano.compareTo(o.getTipoDeMano());
         if (tipoComparacion != 0) return tipoComparacion;
 
+//        if (    this.tipoDeMano.equals(TipoDeMano.PAREJA) ||
+//                this.tipoDeMano.equals(TipoDeMano.DOBLE_PAREJA) ||
+//                this.tipoDeMano.equals(TipoDeMano.TRIO) ||
+//                this.tipoDeMano.equals(TipoDeMano.POKER)
+//        )
+//        {
+//            int miValor = this.obtenerValorDeMano();
+//            int suValor = o.obtenerValorDeMano();
+//
+//            if (miValor > suValor){
+//                return 1;
+//            }
+//            else{
+//                return -1;
+//            }
+//        }
         // 2. Si no ordeno cartas de mayor a menor
         List<Carta> thisCartas = new ArrayList<>(this.cartas);
         List<Carta> otraCartas = new ArrayList<>(o.cartas);
@@ -288,13 +309,7 @@ public class Mano implements Comparable<Mano>{
             return suma;
         }
     }
-//    private int desempate(){
-//        int suma = 0;
-//        for (Carta c : cartas) {
-//            suma += c.getValor().ordinal();
-//        }
-//        return suma;
-//    }
+
 
     private int obtenerValorDeMano() {
         // Dependiendo el tipo de mano, voy a devolver el valor más relevante

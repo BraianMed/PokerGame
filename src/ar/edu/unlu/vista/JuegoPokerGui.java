@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class JuegoPokerGui implements IVista {
 
@@ -16,6 +18,42 @@ public class JuegoPokerGui implements IVista {
     private JTextArea chatArea; // texto plano en la zona central
     private JTextField barraTexto;  // barra de texto en la zona inferior
     private JButton botonEnviar;    // botón de enviar en la zona inferior
+
+    private void ejecutarEnEdt(Runnable accion) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            accion.run();
+        } else {
+            SwingUtilities.invokeLater(accion);
+        }
+    }
+
+    private <T> T ejecutarConRespuestaEnEdt(Callable<T> accion) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            try {
+                return accion.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        AtomicReference<T> resultado = new AtomicReference<>();
+        AtomicReference<Exception> error = new AtomicReference<>();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    resultado.set(accion.call());
+                } catch (Exception e) {
+                    error.set(e);
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        if (error.get() != null) {
+            throw new RuntimeException(error.get());
+        }
+        return resultado.get();
+    }
 
     @Override
     public void iniciarVentana() throws RemoteException {
@@ -29,7 +67,7 @@ public class JuegoPokerGui implements IVista {
 //        accionBotonEnviar();
         this.accionBotonEnviar();
         frame.setVisible(true); // pongo la visibilidad del frame en true.
-        controlador.comunicarEntrada(this.pedirNombreJugador());
+//        controlador.comunicarEntrada(this.pedirNombreJugador());
     }
 
     public JPanel panelPrincipal(){
@@ -85,36 +123,23 @@ public class JuegoPokerGui implements IVista {
         });
     }
 
-    public void solicitarNombreJugador() throws RemoteException {
-        if (controlador != null) {
-            String nombre = pedirNombreJugador();
-            if (nombre != null && !nombre.trim().isEmpty()) {
-                controlador.registrarJugador(nombre);
-            } else {
-                controlador.manejarSalir(opcionSalir());
-            }
+    @Override
+    public void menuApuestas(boolean puedePasar, String nombre, int fichas, int totalApostado){
+        mostrarMensaje(nombre + " usted tiene " + fichas + " fichas");
+        mostrarMensaje("Apuesta actual: " + totalApostado + "- Elija una acción: ");
+        if (totalApostado > 0 && !puedePasar) {
+            mostrarMensaje("IGUALAR");
         }
-    }
-
-    public void setEnviarListener(ActionListener listener) {
-        botonEnviar.addActionListener(listener);
+        mostrarMensaje("SUBIR");
+        mostrarMensaje("RETIRARSE");
+        if (puedePasar) {
+            mostrarMensaje("PASAR");
+        }
     }
 
     @Override
-    public void menuApuestas(boolean primerApostante, String nombre, int fichas){
-        mostrarMensaje(nombre + " usted tiene " + fichas + " fichas");
-        mostrarMensaje("Elija una acción: ");
-        if (primerApostante){
-            mostrarMensaje("IGUALAR");
-            mostrarMensaje("SUBIR");
-            mostrarMensaje("RETIRARSE");
-        }
-        else{
-            mostrarMensaje("IGUALAR");
-            mostrarMensaje("SUBIR");
-            mostrarMensaje("RETIRARSE");
-            mostrarMensaje("PASAR");
-        }
+    public void actualizarBote(int totalBote) {
+        mostrarMensaje("Bote: " + totalBote + " fichas");
     }
 
     public String obtenerTextoIngresado() {
@@ -125,17 +150,17 @@ public class JuegoPokerGui implements IVista {
 
     @Override
     public void mostrarMensaje(String mensaje){
-        chatArea.append(mensaje + "\n");
+        ejecutarEnEdt(() -> chatArea.append(mensaje + "\n"));
     }
 
     @Override
     public void limpiarBarraTexto(){
-        barraTexto.setText("");
+        ejecutarEnEdt(() -> barraTexto.setText(""));
     }
 
     @Override
     public void limpiarTextoPlano(){
-        chatArea.setText("");
+        ejecutarEnEdt(() -> chatArea.setText(""));
     }
 
     // setter de controlador para que el controller pueda autoasignarse a sí mismo en su constructor.
@@ -146,28 +171,34 @@ public class JuegoPokerGui implements IVista {
 
     @Override
     public String pedirNombreJugador(){
-        return JOptionPane.showInputDialog(null,"Ingrese su nombre como jugador: ","NickName");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese su nombre como jugador: ","NickName"));
     }
     @Override
     public String pedirCantFichas(){
-        return JOptionPane.showInputDialog(null,"Ingrese la cantidad(no su valor) de fichas iniciales para la partida");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese la cantidad(no su valor) de fichas iniciales para la partida"));
     }
     @Override
     public String pedirValorFichas(){
-        return JOptionPane.showInputDialog(null,"Ingrese el valor de la ficha");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese el valor de la ficha"));
     }
     @Override
     public String pedirCiegaGrande(){
-        return JOptionPane.showInputDialog(null,"Ingrese el valor de la ciega grande");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese el valor de la ciega grande"));
     }
     @Override
     public void mensajeError(){
-        JOptionPane.showMessageDialog(null,"ERROR AL INGRESAR EL DATO -> REINTENTAR NUEVAMENTE");
+        ejecutarConRespuestaEnEdt(() -> {
+            JOptionPane.showMessageDialog(null,"ERROR AL INGRESAR EL DATO -> REINTENTAR NUEVAMENTE");
+            return null;
+        });
     }
 
     @Override
     public void mensajeFaltanJugadores() {
-        JOptionPane.showMessageDialog(null,"Faltan jugadores en la partida...");
+        ejecutarConRespuestaEnEdt(() -> {
+            JOptionPane.showMessageDialog(null,"Faltan jugadores en la partida...");
+            return null;
+        });
     }
 
     @Override
@@ -176,7 +207,7 @@ public class JuegoPokerGui implements IVista {
     }
     @Override
     public int opcionSalir(){
-        return JOptionPane.showConfirmDialog(null,"Quiere salir del juego?","Exit",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showConfirmDialog(null,"Quiere salir del juego?","Exit",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE));
     }
     @Override
     public void mensajeIgualar(String nombre){
@@ -188,7 +219,7 @@ public class JuegoPokerGui implements IVista {
     }
     @Override
     public String pedirApuesta() throws RemoteException {
-        return JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]"));
     }
     @Override
     public void mensajeAposto(String nombre){
@@ -196,11 +227,11 @@ public class JuegoPokerGui implements IVista {
     }
     @Override
     public void mensajePaso(String nombre) throws RemoteException {
-        mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " decidió pasar.");
+        mostrarMensaje("El jugador " + nombre + " decidió pasar.");
     }
     @Override
     public void mensajeRetirado(String nombre) throws RemoteException {
-        mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " se retiro de la partida.");
+        mostrarMensaje("El jugador " + nombre + " se retiro de la partida.");
     }
     @Override
     public void mensajeErrorIgualar(String nombre, int apuesta, int totalFichas){
@@ -226,14 +257,14 @@ public class JuegoPokerGui implements IVista {
     @Override
     public void mensajeFinal(String ganador){
         if (ganador == null) {
-            JOptionPane.showMessageDialog(null, "La partida concluyo en empate.");
+            mostrarMensaje("La partida concluyo en empate.");
         } else {
-            JOptionPane.showMessageDialog(null, "El ganador indiscutido es: " + ganador);
+            mostrarMensaje("El ganador indiscutido es: " + ganador);
         }
     }
     @Override
     public int mensajeReiniciarJuego(){
-        return JOptionPane.showConfirmDialog(null,"Quiere reiniciar el juego?","Decisión",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showConfirmDialog(null,"Quiere reiniciar el juego?","Decisión",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE));
     }
     @Override
     public void mensajeMostrarApuestaActual(int apuestActual){

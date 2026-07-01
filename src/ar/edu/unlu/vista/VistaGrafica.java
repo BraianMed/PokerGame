@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class VistaGrafica implements IVista{
 
@@ -34,7 +36,6 @@ public class VistaGrafica implements IVista{
     private Image imagenMazo;
     private JLabel fichasBote;
     private JLabel lblEstado;
-
     private JButton btnDescarte0 ,btnDescarte1, btnDescarte2, btnDescarte3, btnDescarte4, btnDescarte5;
     private JPanel panelDescarte; // Panel para contener los botones de descarte
 
@@ -50,6 +51,42 @@ public class VistaGrafica implements IVista{
     public VistaGrafica(){
         cargarRecursosGraficos();
         cargarImagenesCartas();
+    }
+
+    private void ejecutarEnEdt(Runnable accion) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            accion.run();
+        } else {
+            SwingUtilities.invokeLater(accion);
+        }
+    }
+
+    private <T> T ejecutarConRespuestaEnEdt(Callable<T> accion) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            try {
+                return accion.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        AtomicReference<T> resultado = new AtomicReference<>();
+        AtomicReference<Exception> error = new AtomicReference<>();
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    resultado.set(accion.call());
+                } catch (Exception e) {
+                    error.set(e);
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        if (error.get() != null) {
+            throw new RuntimeException(error.get());
+        }
+        return resultado.get();
     }
 
     public ArrayList<String> crearManoDePrueba() {
@@ -193,7 +230,7 @@ public class VistaGrafica implements IVista{
                 }
                 // Dibujar mesa en el centro
                 if (imagenMesa != null) {
-                    // Escalar la mesa como haces con el fondo
+                    // Escalar la mesa como con el fondo
                     int mesaWidth = getWidth() * 2 / 3;  // 66% del ancho del panel
                     int mesaHeight = getHeight() * 2 / 3; // 66% del alto del panel
                     int x = (getWidth() - mesaWidth) / 2;
@@ -230,8 +267,28 @@ public class VistaGrafica implements IVista{
         lblEstado.setFont(new Font("Arial", Font.BOLD, 14));
         panelEstado.add(lblEstado);
 
+//        JPanel panelBote = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+//        fichasBote = new JLabel("");
+//        fichasBote.setForeground(Color.BLACK);
+//        fichasBote.setFont(new Font("Arial", Font.BOLD, 14));
+//        panelBote.add(fichasBote);
+
         // Agregar al panel principal
         mainPanel.add(panelEstado, BorderLayout.NORTH);
+//        mainPanel.add(panelBote,BorderLayout.CENTER);
+
+        JPanel panelBote = new JPanel(new GridBagLayout());
+        panelBote.setOpaque(false);
+        fichasBote = new JLabel("Bote: 0");
+        fichasBote.setForeground(new Color(255, 215, 0));
+        fichasBote.setBackground(new Color(0, 0, 0, 160));
+        fichasBote.setOpaque(true);
+        fichasBote.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
+        fichasBote.setFont(new Font("Arial", Font.BOLD, 14));
+        GridBagConstraints gbcBote = new GridBagConstraints();
+        gbcBote.insets = new Insets(0, 0, 90, 0);
+        panelBote.add(fichasBote, gbcBote);
+        mainPanel.add(panelBote, BorderLayout.CENTER);
 
         // Panel de descarte en la parte derecha
         JPanel panelDerecho = panelDescarte();
@@ -357,6 +414,10 @@ public class VistaGrafica implements IVista{
         });
     }
     private void deshabilitarBotones() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            ejecutarEnEdt(this::deshabilitarBotones);
+            return;
+        }
         this.apostar.setEnabled(false);
         this.igualar.setEnabled(false);
         this.pasar.setEnabled(false);
@@ -364,24 +425,26 @@ public class VistaGrafica implements IVista{
     }
 
     @Override
-    public void menuApuestas(boolean primerApostante, String nombre, int fichas) {
-        // 1. Configurar el área de estado/mensajes
-        actualizarEstado(nombre + " - Fichas: " + fichas + " - Elija acción:");
+    public void menuApuestas(boolean puedePasar, String nombre, int fichas,int totalApostado) {
+        ejecutarEnEdt(() -> {
+            // 1. Configurar el área de estado/mensajes
+            actualizarEstado(nombre + " - Fichas: " + fichas + " - Apuesta actual: " + totalApostado + " Elija su jugada: ");
 
-        // 2. Mostrar botones según el contexto
-        if (primerApostante) {
+            // 2. Mostrar botones según el contexto
+            deshabilitarBotones();
             apostar.setEnabled(true);
-            igualar.setEnabled(true);
             retirarse.setEnabled(true);
-        } else {
-            apostar.setEnabled(true);
-            igualar.setEnabled(true);
-            retirarse.setEnabled(true);
-        }
+            if (totalApostado > 0 && !puedePasar) {
+                igualar.setEnabled(true);
+            }
+            if (puedePasar) {
+                pasar.setEnabled(true);
+            }
 
-        // 3. Actualizar interfaz
-        frame.revalidate();
-        frame.repaint();
+            // 3. Actualizar interfaz
+            frame.revalidate();
+            frame.repaint();
+        });
     }
 
     private void actualizarEstado(String mensaje) {
@@ -408,13 +471,15 @@ public class VistaGrafica implements IVista{
 
     @Override
     public void mostrarMensaje(String mensaje) {
-        if (lblEstado == null) {
-            lblEstado = new JLabel(" ");
-            lblEstado.setForeground(Color.WHITE);
-            lblEstado.setFont(new Font("Arial", Font.PLAIN, 12));
-            // Agregar al panel adecuado en tu inicialización
-        }
-        lblEstado.setText(mensaje);
+        ejecutarEnEdt(() -> {
+            if (lblEstado == null) {
+                lblEstado = new JLabel(" ");
+                lblEstado.setForeground(Color.WHITE);
+                lblEstado.setFont(new Font("Arial", Font.PLAIN, 12));
+                // Agregar al panel adecuado en tu inicialización
+            }
+            lblEstado.setText(mensaje);
+        });
     }
 
     @Override
@@ -433,72 +498,80 @@ public class VistaGrafica implements IVista{
     }
     @Override
     public String pedirNombreJugador(){
-        return JOptionPane.showInputDialog(null,"Ingrese su nombre como jugador: ","NickName");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese su nombre como jugador: ","NickName"));
     }
     @Override
     public String pedirCantFichas(){
-        return JOptionPane.showInputDialog(null,"Ingrese la cantidad(no su valor) de fichas iniciales para la partida");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese la cantidad(no su valor) de fichas iniciales para la partida"));
     }
     @Override
     public String pedirValorFichas(){
-        return JOptionPane.showInputDialog(null,"Ingrese el valor de la ficha");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese el valor de la ficha"));
     }
     @Override
     public String pedirCiegaGrande(){
-        return JOptionPane.showInputDialog(null,"Ingrese el valor de la ciega grande");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog(null,"Ingrese el valor de la ciega grande"));
     }
     @Override
     public void mensajeError(){
-        JOptionPane.showMessageDialog(null,"ERROR AL INGRESAR EL DATO -> REINTENTAR NUEVAMENTE");
+        ejecutarConRespuestaEnEdt(() -> {
+            JOptionPane.showMessageDialog(null,"ERROR AL INGRESAR EL DATO -> REINTENTAR NUEVAMENTE");
+            return null;
+        });
     }
 
     @Override
     public void mensajeFaltanJugadores() {
-        JOptionPane.showMessageDialog(null,"Faltan jugadores en la partida...");
+        ejecutarConRespuestaEnEdt(() -> {
+            JOptionPane.showMessageDialog(null,"Faltan jugadores en la partida...");
+            return null;
+        });
     }
 
     @Override
     public void mostrarCartas(ArrayList<String> cartas) {
-        // Obtener el panel principal
-        JPanel mainPanel = (JPanel) frame.getContentPane().getComponent(0);
+        ejecutarEnEdt(() -> {
+            // Obtener el panel principal
+            JPanel mainPanel = (JPanel) frame.getContentPane().getComponent(0);
 
-        // Buscar y eliminar el panel de cartas anterior
-        Component[] components = mainPanel.getComponents();
-        for (Component comp : components) {
-            BorderLayout layout = (BorderLayout) mainPanel.getLayout();
-            if (layout.getConstraints(comp) == BorderLayout.SOUTH) {
-                mainPanel.remove(comp);
-                break;
+            // Buscar y eliminar el panel de cartas anterior
+            Component[] components = mainPanel.getComponents();
+            for (Component comp : components) {
+                BorderLayout layout = (BorderLayout) mainPanel.getLayout();
+                if (layout.getConstraints(comp) == BorderLayout.SOUTH) {
+                    mainPanel.remove(comp);
+                    break;
+                }
             }
-        }
 
-        // Crear nuevo panel para las cartas
-        JPanel panelCartasJugador = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        panelCartasJugador.setOpaque(false);
+            // Crear nuevo panel para las cartas
+            JPanel panelCartasJugador = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+            panelCartasJugador.setOpaque(false);
 
-        for (String cartaStr : cartas) {
-            Image imagenCarta = imagenesCartas.get(cartaStr);
-            if (imagenCarta != null) {
-                ImageIcon icono = new ImageIcon(imagenCarta.getScaledInstance(80, 120, Image.SCALE_SMOOTH));
-                JLabel labelCarta = new JLabel(icono);
-                panelCartasJugador.add(labelCarta);
-            } else {
-                System.err.println("No se encontró imagen para: " + cartaStr);
-                JLabel labelTexto = new JLabel(cartaStr);
-                labelTexto.setForeground(Color.WHITE);
-                panelCartasJugador.add(labelTexto);
+            for (String cartaStr : cartas) {
+                Image imagenCarta = imagenesCartas.get(cartaStr);
+                if (imagenCarta != null) {
+                    ImageIcon icono = new ImageIcon(imagenCarta.getScaledInstance(80, 120, Image.SCALE_SMOOTH));
+                    JLabel labelCarta = new JLabel(icono);
+                    panelCartasJugador.add(labelCarta);
+                } else {
+                    System.err.println("No se encontró imagen para: " + cartaStr);
+                    JLabel labelTexto = new JLabel(cartaStr);
+                    labelTexto.setForeground(Color.WHITE);
+                    panelCartasJugador.add(labelTexto);
+                }
             }
-        }
 
-        // Agregar el nuevo panel y actualizar
-        mainPanel.add(panelCartasJugador, BorderLayout.SOUTH);
-        mainPanel.revalidate();
-        mainPanel.repaint();
+            // Agregar el nuevo panel y actualizar
+            mainPanel.add(panelCartasJugador, BorderLayout.SOUTH);
+            mainPanel.revalidate();
+            mainPanel.repaint();
+        });
     }
 
     @Override
     public int opcionSalir(){
-        return JOptionPane.showConfirmDialog(null,"Quiere salir del juego?","Exit",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showConfirmDialog(null,"Quiere salir del juego?","Exit",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE));
     }
 
     @Override
@@ -513,7 +586,7 @@ public class VistaGrafica implements IVista{
 
     @Override
     public String pedirApuesta() throws RemoteException {
-        return JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]");
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showInputDialog("Ingrese la cantidad a apostar: [tiene que ser mayor que la apuesta actual = " + controlador.apuestaActualController() +"]"));
     }
 
     @Override
@@ -523,12 +596,12 @@ public class VistaGrafica implements IVista{
 
     @Override
     public void mensajePaso(String nombre) throws RemoteException {
-        mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " decidió pasar.");
+        mostrarMensaje("El jugador " + nombre + " decidió pasar.");
     }
 
     @Override
     public void mensajeRetirado(String nombre) throws RemoteException {
-        mostrarMensaje(controlador.jugadorTurnoController() + "El jugador: " + nombre + " se retiro de la partida.");
+        mostrarMensaje("El jugador " + nombre + " se retiro de la partida.");
     }
 
     @Override
@@ -545,6 +618,10 @@ public class VistaGrafica implements IVista{
 
     }
     private void habilitarDescarte(boolean mostrar){
+        if (!SwingUtilities.isEventDispatchThread()) {
+            ejecutarEnEdt(() -> habilitarDescarte(mostrar));
+            return;
+        }
         panelDescarte.setVisible(mostrar);
 
         btnDescarte0.setVisible(mostrar);
@@ -633,21 +710,34 @@ public class VistaGrafica implements IVista{
 
     @Override
     public void mensajeFinal(String ganador){
-        if (ganador == null) {
-            JOptionPane.showMessageDialog(null, "La partida concluyo en empate.");
-        } else {
-            JOptionPane.showMessageDialog(null, "El ganador indiscutido es: " + ganador);
-        }
+        ejecutarConRespuestaEnEdt(() -> {
+            if (ganador == null) {
+                JOptionPane.showMessageDialog(null, "La partida concluyo en empate.");
+            } else {
+                JOptionPane.showMessageDialog(null, "El ganador indiscutido es: " + ganador);
+            }
+            return null;
+        });
     }
 
     @Override
     public int mensajeReiniciarJuego(){
-        return JOptionPane.showConfirmDialog(null,"Quiere reiniciar el juego?","Decisión",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
+        return ejecutarConRespuestaEnEdt(() -> JOptionPane.showConfirmDialog(null,"Quiere reiniciar el juego?","Decisión",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE));
     }
 
     @Override
     public void mensajeMostrarApuestaActual(int apuestActual){
         this.mostrarMensaje("La apuesta actual vigente es de: " + apuestActual);
+//        this.fichasBote.setText("La apuesta actual vigente es de: " + apuestActual);
+    }
+
+    @Override
+    public void actualizarBote(int totalBote) {
+        ejecutarEnEdt(() -> {
+            if (fichasBote != null) {
+                fichasBote.setText("Bote: " + totalBote);
+            }
+        });
     }
 
     @Override

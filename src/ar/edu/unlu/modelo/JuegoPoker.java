@@ -13,14 +13,12 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
     private int cantidadJugadores;
     private int jugadoresRegistrados;
     private boolean primeraVuelta;
-    private int turnoActual;
     private Bote bote;
     private Baraja baraja;
     private Ficha ciegaChica;
     private Ficha ciegaGrande;
     private int posRepartidor;
     private ArrayList<Ficha> fichasIniciales;
-//    private ArrayList<IObservador> observadores;
     private int apuestaActual;
     private int turno;
     private Jugador anfitrion;
@@ -29,6 +27,8 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
     private ArrayList<String> cartasTurnoActual;
     private int turnoAnterior;
     private int accionesContadas;
+    private boolean partidaFinalizada;
+    private boolean resultadosRegistrados;
     private static JuegoPoker instancia;
 
     public JuegoPoker(){
@@ -40,14 +40,14 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
         this.bote = new Bote();
         this.posRepartidor = 0;
         this.fichasIniciales = new ArrayList<>();
-//        this.observadores = new ArrayList<>();
         this.turno = 0;
         this.apuestaActual = 0;
         this.error = false;
         this.cartasTurnoActual = new ArrayList<>();
-        this.turnoActual = 0;
         this.turnoAnterior = 0;
         this.accionesContadas = 0;
+        this.partidaFinalizada = false;
+        this.resultadosRegistrados = false;
     }
 
     public static JuegoPoker getInstancia() {
@@ -55,6 +55,10 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
             instancia = new JuegoPoker();
         }
         return instancia;
+    }
+
+    public void iniciarRegistroJugadores() throws RemoteException {
+        notificarObservadores(Evento.NOMBRE_JUGADOR);
     }
 
     @Override
@@ -66,6 +70,7 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
 
     @Override
     public boolean asignarCiegas() throws RemoteException {
+        System.out.println("[SERVIDOR] entro asignarCiegas, jugadores=" + jugadores.size());
         if (!jugadores.isEmpty()){
             int posCiegaChica = 0;
             int posCiegaGrande = 0;
@@ -93,8 +98,8 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
             jugadores.get(this.turno).setPrimerApostante(true);
 
             this.apuestaActual = ciegaGrande.getValor();
-
-            notificarObservadores(Evento.REPARTIR_CARTAS);
+            this.repartirCartas();
+//            notificarObservadores(Evento.REPARTIR_CARTAS);
             return true;
         }
         return false;
@@ -112,6 +117,7 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
 
     @Override
     public void repartirCartas() throws RemoteException {
+        System.out.println("[SERVIDOR] entro repartirCartas");
         if (!jugadores.isEmpty()){
             for (Jugador jugador : jugadores){
                 baraja.repartirCarta(jugador);
@@ -157,8 +163,15 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
 
     @Override
     public void gestionVuelta() throws RemoteException {
+        if (partidaFinalizada) {
+            return;
+        }
+
         int activos = cantJugadoresEnJuego();
-        if (activos == 0) return;
+        if (activos <= 1) {
+            finalizarPartida();
+            return;
+        }
 
         accionesContadas++;
 
@@ -179,21 +192,58 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
                 // Se completaron todas las apuestas+descartes de la primera vuelta
                 primeraVuelta = false;
                 accionesContadas = 0;            // reiniciar contador para fase 2
+                limpiarApuestasJugadores();
                 siguienteTurno();                // pasa al primer jugador de la 2ª ronda
                 notificarObservadores(Evento.APUESTA);       // fase 2: todos apuestan
             }
         }
         else {
-            // Segunda vuelta ⇒ cada jugador sólo 1 acción (apostar)
+            // Segunda vuelta ⇒ cada jugador solo 1 acción (apostar)
             int totalAcciones2 = activos;
             if (accionesContadas < totalAcciones2) {
                 siguienteTurno();
                 notificarObservadores(Evento.APUESTA);
             } else {
                 // Fin de la segunda vuelta
-                notificarObservadores(Evento.DEFINIR_GANADORES);
+                finalizarPartida();
             }
         }
+    }
+
+    private void limpiarApuestasJugadores() {
+        for (Jugador jugador : jugadores) {
+            jugador.limpiarApuestaActual();
+            jugador.setPrimerApostante(false);
+        }
+    }
+
+    private void finalizarPartida() throws RemoteException {
+        if (partidaFinalizada) {
+            return;
+        }
+        partidaFinalizada = true;
+        registrarResultados();
+        notificarObservadores(Evento.DEFINIR_GANADORES);
+        notificarObservadores(Evento.DECISION);
+    }
+
+    private void registrarResultados() {
+        if (resultadosRegistrados) {
+            return;
+        }
+        this.sumarVictorias();
+        this.sumarDerrotas();
+        resultadosRegistrados = true;
+    }
+
+    private ArrayList<Jugador> jugadoresActivos() {
+        ArrayList<Jugador> activos = new ArrayList<>();
+        for (Jugador jugador : jugadores) {
+            if (jugador.isEnJuego()) {
+                activos.add(jugador);
+            }
+        }
+        return activos;
     }
 
     @Override
@@ -217,9 +267,10 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
         this.apuestaActual = 0;
         this.error = false;
         this.cartasTurnoActual = new ArrayList<>();
-        this.turnoActual = 0;
         this.turnoAnterior = 0;
         this.accionesContadas = 0;
+        this.partidaFinalizada = false;
+        this.resultadosRegistrados = false;
         for (Jugador jugador : jugadores){
             jugador.reiniciame();
         }
@@ -228,8 +279,20 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
 
     @Override
     public Jugador determinarGanador(){
+        ArrayList<Jugador> activos = jugadoresActivos();
+        if (activos.isEmpty()) {
+            return null;
+        }
+        if (activos.size() == 1) {
+            return activos.get(0);
+        }
+
         Mano ganadorMano = manoGanadora();
-        for (Jugador j : jugadores){
+        if (ganadorMano == null) {
+            return null;
+        }
+
+        for (Jugador j : activos){
             if (ganadorMano.equals(j.getMano())){
                 return j;
             }
@@ -239,14 +302,16 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
 
     @Override
     public void resultados() throws RemoteException {
-        this.sumarVictorias();
-        this.sumarDerrotas();
+        registrarResultados();
         notificarObservadores(Evento.DECISION);
     }
 
     @Override
     public void sumarVictorias(){
         Jugador ganador = determinarGanador();
+        if (ganador == null) {
+            return;
+        }
         for (Jugador jugador : jugadores){
             if (jugador.equals(ganador)){
                 jugador.sumarVictorias();
@@ -256,6 +321,9 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
     @Override
     public void sumarDerrotas(){
         Jugador ganador = determinarGanador();
+        if (ganador == null) {
+            return;
+        }
         for (Jugador jugador : jugadores){
             if (!jugador.equals(ganador)){
                 jugador.sumarDerrotas();
@@ -264,18 +332,39 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
     }
     @Override
     public Mano manoGanadora() {
-        Mano mejorMano = jugadores.get(0).getMano();
-        for (int i = 1; i < jugadores.size(); i++) {
-            Mano manoComparada = jugadores.get(i).getMano();
-            mejorMano = mejorMano.evaluarMano(manoComparada); // evaluamos la mejor mano entre la actual y la nueva
+        ArrayList<Jugador> activos = jugadoresActivos();
+        if (activos.isEmpty()) {
+            return null;
         }
-        return mejorMano;
+        if (activos.size() == 1) {
+            return activos.get(0).getMano();
+        }
+
+        Mano mejorMano = activos.get(0).getMano();
+        mejorMano.definirMano();
+        boolean hayEmpate = false;
+        for (int i = 1; i < activos.size(); i++) {
+            Mano manoComparada = activos.get(i).getMano();
+            manoComparada.definirMano();
+            int comparacion = mejorMano.compareTo(manoComparada);
+            if (comparacion < 0) {
+                mejorMano = manoComparada;
+                hayEmpate = false;
+            } else if (comparacion == 0) {
+                hayEmpate = true;
+            }
+        }
+        return hayEmpate ? null : mejorMano;
     }
 
     @Override
     public void igualarJugador() throws RemoteException {
-        jugadores.get(getTurno()).apostar(apuestaActual,bote);
-        this.apuestaActual = this.apuestaActual + apuestaActual;
+        Jugador jugador = jugadores.get(getTurno());
+        int faltaIgualar = apuestaActual - jugador.cantApuestaActual();
+        if (faltaIgualar > 0) {
+            jugador.apostar(faltaIgualar,bote);
+        }
+        jugador.setPrimerApostante(false);
     }
     @Override
     public Jugador manejarTurnos(){
@@ -288,8 +377,17 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
 
     @Override
     public void apostarJugador(int cantidad) throws IllegalArgumentException, RemoteException {
-        jugadores.get(getTurno()).apostar(cantidad,bote);
+        if (cantidad <= apuestaActual) {
+            throw new IllegalArgumentException("La apuesta debe superar la apuesta actual");
+        }
+        Jugador jugador = jugadores.get(getTurno());
+        int diferencia = cantidad - jugador.cantApuestaActual();
+        if (diferencia <= 0) {
+            throw new IllegalArgumentException("La apuesta debe superar lo ya apostado por el jugador");
+        }
+        jugador.apostar(diferencia,bote);
         this.apuestaActual = cantidad;
+        jugador.setPrimerApostante(false);
 //        notificar(Evento.APUESTA);
     }
 
@@ -297,17 +395,32 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
     public Jugador agregarJugador(String nombre) {
         int maxJugadores = 6; // Límite superior
 
-        if (jugadores.size() >= maxJugadores) {
-            System.out.println("No se pueden agregar más jugadores.");
+        if (nombre == null || nombre.trim().isEmpty()) {
+            this.error = true;
             return null;
         }
 
-        Jugador actual = new Jugador(nombre);
+        String nombreNormalizado = nombre.trim();
+        for (Jugador jugador : jugadores) {
+            if (jugador.getNombre().equalsIgnoreCase(nombreNormalizado)) {
+                this.error = true;
+                return null;
+            }
+        }
+
+        if (jugadores.size() >= maxJugadores) {
+            System.out.println("No se pueden agregar más jugadores.");
+            this.error = true;
+            return null;
+        }
+
+        Jugador actual = new Jugador(nombreNormalizado);
         if (this.anfitrion == null) {
             this.anfitrion = actual;
         }
 
         jugadores.add(actual);
+        this.error = false;
 
         this.jugadoresRegistrados++;
 //        this.incrementoJugadoresRegistrados();
@@ -322,23 +435,6 @@ public class JuegoPoker extends ObservableRemoto implements IModelo {
         }
         notificarObservadores(Evento.NOMBRE_JUGADOR);
     }
-
-//    @Override
-//    public void agregarObservador(IObservador observador) {
-//        observadores.add(observador);
-//    }
-//
-//    @Override
-//    public void eliminarObservador(IObservador observador) {
-//        observadores.remove(observador);
-//    }
-//
-//    @Override
-//    public void notificar(Object o) {
-//        for (IObservador observador: observadores){
-//            observador.actualizar(o);
-//        }
-//    }
 
     @Override
     public void configurarJuego() throws RemoteException {

@@ -10,7 +10,9 @@ import java.util.ArrayList;
 public interface IVista {
     void iniciarVentana() throws RemoteException;
 
-    void menuApuestas(boolean primerApostante, String nombre, int fichas);
+    void menuApuestas(boolean puedePasar, String nombre, int fichas,int totalApostado);
+
+    void actualizarBote(int totalBote);
 
     void mostrarMensaje(String mensaje);
 

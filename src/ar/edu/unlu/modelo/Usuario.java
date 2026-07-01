@@ -1,9 +1,15 @@
 package ar.edu.unlu.modelo;
 
-public class Usuario {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class Usuario implements Serializable {
+    @Serial
+    private static final long serialVersionUID = -8541698973154465927L;
     private String nombre;
     private int victorias;
     private int derrotas;
+
 
     public Usuario(String nombre){
         this.nombre = nombre;

@@ -57,10 +57,13 @@ public class AppCliente {
         IVista vista = (opcion == 0) ? new VistaGrafica() : new JuegoPokerGui();
         PokerController controlador = new PokerController(vista);
         Cliente c = new Cliente(ip, Integer.parseInt(port), ipServidor, Integer.parseInt(portServidor));
-        vista.setControlador(controlador);
-        vista.iniciarVentana();
+//        vista.setControlador(controlador);
+
         try {
-            c.iniciar(controlador);
+            vista.setControlador(controlador);
+            vista.iniciarVentana();              // 1º: crea frame y chatArea
+            c.iniciar(controlador);              // 2º: RMI y eventos
+            controlador.getModelo().iniciarRegistroJugadores(); // si lo seguís usando
         } catch (RemoteException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

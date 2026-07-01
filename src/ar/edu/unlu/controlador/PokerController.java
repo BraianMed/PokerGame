@@ -29,15 +29,6 @@ public class PokerController implements IControladorRemoto {
         this.cantDescartadas = 0;
     }
 
-    public String ganadorController() throws RemoteException {
-        modelo.sumarVictorias();
-        modelo.sumarDerrotas();
-        return modelo.determinarGanador().getNombre();
-    }
-
-    public String jugadorTurnoController() throws RemoteException {
-        return modelo.nombreJugadorActual();
-    }
 
     public int apuestaActualController() throws RemoteException {
         return modelo.getApuestaActual();
@@ -99,6 +90,7 @@ public class PokerController implements IControladorRemoto {
     }
     public void validarCiega(String ciegaGrande) throws RemoteException {
         int ciega = 0;
+        System.out.println("[CLIENTE] validarCiega: " + ciegaGrande);
         try{
             ciega = Integer.parseInt(ciegaGrande);
             if (ciega <= 0 || !this.validarCiegasController(ciega)){
@@ -109,9 +101,12 @@ public class PokerController implements IControladorRemoto {
             else{
                 vista.mostrarMensaje("Ciega grande ingresada con éxito");
                 modelo.inicializarCiegas( (ciega / 2) ,ciega);
+                System.out.println("[CLIENTE] validarCiegasController=" + validarCiegasController(ciega));
                 try {
+                    System.out.println("entra en el try para asignar ciegas");
                     this.asignarCiegas();
                 } catch (Exception e) {
+                    System.out.println("catch de validarCiega");
                     e.printStackTrace();
                 }
             }
@@ -123,24 +118,20 @@ public class PokerController implements IControladorRemoto {
         }
     }
     public boolean validarSubir(int apuestaActual) throws RemoteException {
-        if (apuestaActual > modelo.getCiegaGrande()){
-            return true;
-        }
-        else{
-            return false;
-        }
+        return apuestaActual > modelo.getApuestaActual();
     }
 
     public boolean validarCiegasController(int ciegaActual) throws RemoteException {
-        if (ciegaActual > modelo.getJugadores().get(0).totalFichas() && (ciegaActual / 2) > modelo.getJugadores().get(0).totalFichas() ){
-            return false;
+        for (Jugador jugador : modelo.getJugadores()) {
+            if (ciegaActual > jugador.totalFichas() || (ciegaActual / 2) > jugador.totalFichas()) {
+                return false;
+            }
         }
-        else{
-            return true;
-        }
+        return true;
     }
 
     public void asignarCiegas() throws RemoteException {
+        System.out.println("[SERVIDOR] entro asignarCiegas");
         if (modelo.asignarCiegas()){    // si pudo asignar las fichas entonces muevo el repartidor.
             modelo.moverRepartidor();
 //            modelo.cartasObserver();
@@ -161,6 +152,15 @@ public class PokerController implements IControladorRemoto {
         }
         return resultado;
     }
+
+    private void mostrarMenuApuestasActual() throws RemoteException {
+        Jugador jugadorTurno = modelo.manejarTurnos();
+        int apuestaActual = modelo.getApuestaActual();
+        boolean puedePasar = jugadorTurno.cantApuestaActual() >= apuestaActual;
+        vista.actualizarBote(modelo.totalApostadoBote());
+        vista.menuApuestas(puedePasar, jugadorTurno.getNombre(), jugadorTurno.totalFichas(), apuestaActual);
+    }
+
     public int validarCantDescarte(String entrada) {
         try {
             int valor = Integer.parseInt(entrada);
@@ -186,9 +186,15 @@ public class PokerController implements IControladorRemoto {
         int salir = 0;
         if(this.jugadorAsociado == null) {
             if (input != null) {
-                this.jugadorAsociado = modelo.agregarJugador(input);
-                System.out.println(this.jugadorAsociado.getNombre());
-                this.modelo.verificarJugadoresListos();
+                Jugador jugadorRegistrado = modelo.agregarJugador(input);
+                if (jugadorRegistrado != null) {
+                    this.jugadorAsociado = jugadorRegistrado;
+                    System.out.println(this.jugadorAsociado.getNombre());
+                    this.modelo.verificarJugadoresListos();
+                } else {
+                    vista.mensajeError();
+                    this.modelo.iniciarRegistroJugadores();
+                }
 
             } else {
                 salir = vista.opcionSalir();
@@ -196,9 +202,15 @@ public class PokerController implements IControladorRemoto {
                     this.modelo.verificarJugadoresListos();
                 }
             }
+            return;
         }
+        if (this.eventoActual == null) {
+            vista.mostrarMensaje("Esperá tu turno o la fase del juego.");
+            return;
+        }
+
         if (eventoActual.equals(Evento.APUESTA)){
-            if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
+            if (this.soy(modelo.manejarTurnos())){
                 switch (input.toLowerCase()){
                     case "igualar" -> {
                         if(!this.manejarIgualar()){
@@ -213,7 +225,9 @@ public class PokerController implements IControladorRemoto {
                         modelo.gestionVuelta();
                     }
                     case "pasar" -> {
-                        this.manejarPasar();
+                        if (!this.manejarPasar()){
+                            return;
+                        }
                         this.modelo.gestionVuelta();
                     }
                     case "retirarse" ->{
@@ -222,7 +236,7 @@ public class PokerController implements IControladorRemoto {
                     }
                     default -> {
                         vista.mensajeError();
-                        vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+                        mostrarMenuApuestasActual();
                     }
                 }
             }
@@ -231,14 +245,14 @@ public class PokerController implements IControladorRemoto {
             }
         }
         else if (this.eventoActual.equals(Evento.CANT_DESCARTE)){
-            if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
+            if (this.soy(modelo.manejarTurnos())){
                 this.indices.clear();
                 cantDescarte = validarCantDescarte(input);
                 manejarCantDescarte();
             }
         }
         else if (this.eventoActual.equals(Evento.INDICES_DESCARTE)){
-            if (this.modelo.manejarTurnos().equals(this.jugadorAsociado)){
+            if (this.soy(modelo.manejarTurnos())){
                 manejarIndiceDescarte(input);
             }
         }
@@ -247,16 +261,24 @@ public class PokerController implements IControladorRemoto {
 
     private boolean manejarIgualar() throws RemoteException {
         boolean resultado;
+        if (modelo.getApuestaActual() <= 0) {
+            return manejarPasar();
+        }
+        if (modelo.manejarTurnos().cantApuestaActual() >= modelo.getApuestaActual()) {
+            return manejarPasar();
+        }
         try {
             modelo.igualarJugador();
-            this.jugadorAsociado.setPrimerApostante(false);
+//            this.jugadorAsociado.setPrimerApostante(false);
+            vista.actualizarBote(modelo.totalApostadoBote());
+            vista.mensajeIgualar(modelo.manejarTurnos().getNombre());
+            vista.mostrarMensaje(modelo.manejarTurnos().getNombre() + " ahora tiene " + modelo.manejarTurnos().totalFichas() + " fichas.");
             resultado = true;
         } catch (Exception e) {
-            vista.mensajeErrorIgualar(this.jugadorAsociado.getNombre(),modelo.getApuestaActual(),this.jugadorAsociado.totalFichas());
+            vista.mensajeErrorIgualar(modelo.manejarTurnos().getNombre(),modelo.getApuestaActual(),modelo.manejarTurnos().totalFichas());
             resultado = false;
             // ver como hacer cuando quiere igualar y no tiene saldo...
         }
-        vista.mensajeIgualar(this.jugadorAsociado.getNombre());
         return resultado;
     }
     public boolean manejarSubir() throws RemoteException {
@@ -266,26 +288,34 @@ public class PokerController implements IControladorRemoto {
         if (apuestaEntera != -1 && this.validarSubir(apuestaEntera)){
             try{
                 this.modelo.apostarJugador(apuestaEntera);
-                vista.mensajeAposto(this.jugadorAsociado.getNombre());
-                this.jugadorAsociado.setPrimerApostante(false);
+                vista.actualizarBote(modelo.totalApostadoBote());
+                vista.mensajeAposto(modelo.manejarTurnos().getNombre());
+                vista.mostrarMensaje(modelo.manejarTurnos().getNombre() + " ahora tiene " + modelo.manejarTurnos().totalFichas() + " fichas.");
+//                this.jugadorAsociado.setPrimerApostante(false);
                 resultado = true;
             }
             catch (Exception e){
                 vista.mensajeError();
-                vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+                mostrarMenuApuestasActual();
                 resultado = false;
             }
         }
         else{
             vista.mensajeError();
-            vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+            mostrarMenuApuestasActual();
             resultado = false;
         }
         return resultado;
     }
 
-    public void manejarPasar() throws RemoteException {
+    public boolean manejarPasar() throws RemoteException {
+        if (modelo.getApuestaActual() > modelo.manejarTurnos().cantApuestaActual()) {
+            vista.mostrarMensaje("No podés pasar: primero tenés que igualar o subir la apuesta actual.");
+            mostrarMenuApuestasActual();
+            return false;
+        }
         vista.mensajePaso(this.jugadorAsociado.getNombre());
+        return true;
     }
 
     public void manejarRetirarse() throws RemoteException {
@@ -369,14 +399,63 @@ public class PokerController implements IControladorRemoto {
         }
     }
 
+    private void pedirDecisionFinal() {
+        SwingUtilities.invokeLater(() -> {
+            int opcion = vista.mensajeReiniciarJuego();
+            Thread decisionThread = new Thread(() -> {
+                try {
+                    this.manejarDesicion(opcion);
+                } catch (RemoteException e) {
+                    SwingUtilities.invokeLater(() -> vista.mostrarMensaje("No se pudo aplicar la decisión final."));
+                }
+            }, "decision-final-poker");
+            decisionThread.start();
+        });
+    }
+
+    private boolean soy(Jugador j) {
+        return j != null && this.jugadorAsociado != null
+                && j.getNombre().equals(this.jugadorAsociado.getNombre());
+    }
+
     @Override
     public void actualizar(IObservableRemoto observableRemoto,Object o) throws RemoteException {
         Evento eventoActual = (Evento) o;
         int salir = 0;
         switch (eventoActual){
-
+            case NOMBRE_JUGADOR -> {
+                if (modelo.isError()){
+                    vista.mensajeError();
+                    modelo.setError(false);
+                }
+                if(this.jugadorAsociado == null) {
+                    String actual = vista.pedirNombreJugador();
+                    if (actual != null) {
+                        Jugador jugadorRegistrado = modelo.agregarJugador(actual);
+                        if (jugadorRegistrado != null) {
+                            this.jugadorAsociado = jugadorRegistrado;
+                            System.out.println(this.jugadorAsociado.getNombre());
+                            this.modelo.verificarJugadoresListos();
+                        } else {
+                            vista.mensajeError();
+                            this.modelo.iniciarRegistroJugadores();
+                        }
+//                    if (this.jugadorAsociado == null){
+//                        // ver que hacer cuando se llega al limite de jugadores
+//                    }
+                    } else {
+                        salir = vista.opcionSalir();
+                        if (this.manejarSalir(salir)) {
+                            this.modelo.verificarJugadoresListos();
+                        }
+                    }
+                }
+//                else{
+//                    vista.mostrarMensaje("Ya se ha ingresado un jugador con el nombre: " + this.jugadorAsociado.getNombre());
+//                }
+            }
             case FALTAN_JUGADORES -> {
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.getAnfitrion())){
                     if (modelo.isError()){
                         vista.mensajeError();
                         modelo.setError(false);
@@ -386,13 +465,13 @@ public class PokerController implements IControladorRemoto {
                 }
             }
             case JUGADORES_INGRESADOS -> {
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.getAnfitrion())){
                     vista.mostrarMensaje("Todos los jugadores se han registrado con éxito!");
-                    if (modelo.getAnfitrion().equals(this.jugadorAsociado)){modelo.configurarJuego();}
+                    if (this.soy(this.modelo.getAnfitrion())){modelo.configurarJuego();}
                 }
             }
             case CANT_FICHAS_INICIALES -> {
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.getAnfitrion())){
                     this.entrada = vista.pedirCantFichas();
                     if (this.entrada != null){
                         this.fichasInicialesController(this.entrada);
@@ -404,7 +483,7 @@ public class PokerController implements IControladorRemoto {
                 }
             }
             case FICHAS_INICIALES -> {
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.getAnfitrion())){
                     this.entrada = vista.pedirValorFichas();
                     if (this.entrada != null){
                         valorFichaController(this.entrada);
@@ -416,7 +495,8 @@ public class PokerController implements IControladorRemoto {
                 }
             }
             case VALOR_CIEGAS -> {
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.getAnfitrion())){
+                    System.out.println("[CLIENTE] VALOR_CIEGAS, soyAnfitrion=" + soy(modelo.getAnfitrion()));
                     this.entrada = vista.pedirCiegaGrande();
                     if (this.entrada != null){
                         this.validarCiega(this.entrada);
@@ -428,7 +508,7 @@ public class PokerController implements IControladorRemoto {
                 }
             }
             case REPARTIR_CARTAS -> {
-                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.manejarTurnos())){
                     vista.mostrarMensaje("repartiendo cartas...");
 //                System.out.println("Turno actual: " + modelo.manejarTurnos().getNombre());
                     System.out.println(modelo.getJugadoresRegistrados());
@@ -436,57 +516,64 @@ public class PokerController implements IControladorRemoto {
 
                     modelo.repartirCartas();
                 }
+                else{
+                    System.out.println("error");
+                }
 
             }
             case MOSTRAR_CARTAS -> {
-                if(eventoActual.equals(Evento.APUESTA)){break;}
-
-                if (modelo.manejarTurnos().equals(this.jugadorAsociado)) {
+                if (this.soy(this.modelo.manejarTurnos())) {
                     System.out.println("turno actual: "+ modelo.getTurno());
                     vista.mostrarCartas(modelo.cartasTurnoActual());
                     // ver como ahorrar las siguientes 4 líneas de código:
-                    vista.mensajeMostrarApuestaActual(this.modelo.totalApostadoBote());
-                    vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(), this.jugadorAsociado.getNombre(), this.jugadorAsociado.totalFichas());
+//                    vista.mensajeMostrarApuestaActual(this.modelo.totalApostadoBote());
+                    mostrarMenuApuestasActual();
                     this.eventoActual = Evento.APUESTA;
                 } else {
                     vista.mostrarMensaje("El jugador con turno actual esta viendo sus cartas.");
                 }
             }
             case APUESTA -> {
-                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
-                    vista.mensajeMostrarApuestaActual(this.modelo.totalApostadoBote());
-                    vista.menuApuestas(this.jugadorAsociado.isPrimerApostante(),this.jugadorAsociado.getNombre(),this.jugadorAsociado.totalFichas());
+                if (this.soy(this.modelo.manejarTurnos())){
+//                    vista.mensajeMostrarApuestaActual(this.modelo.totalApostadoBote());
+                    mostrarMenuApuestasActual();
                     this.eventoActual = Evento.APUESTA;
                 }
             }
             case CANT_DESCARTE -> {
-                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.manejarTurnos())){
                     vista.mensajeDescarte();
                     this.eventoActual = Evento.CANT_DESCARTE;
                 }
             }
             case INDICES_DESCARTE -> {
-                if (modelo.manejarTurnos().equals(this.jugadorAsociado)){
+                if (this.soy(this.modelo.manejarTurnos())){
                     vista.mensajeIndices();
                     this.eventoActual = Evento.INDICES_DESCARTE;
                 }
             }
             case DEFINIR_GANADORES -> {
                 vista.limpiarBarraTexto();
-                vista.limpiarTextoPlano();
-                if (modelo.determinarGanador().equals(this.jugadorAsociado)){
+                this.eventoActual = null;
+                this.indices.clear();
+                this.cantDescarte = 0;
+                this.cantDescartadas = 0;
+                Jugador ganador = this.modelo.determinarGanador();
+                if (ganador == null) {
+                    vista.mostrarMensaje("La partida terminó en empate.");
+                    vista.mensajeFinal(null);
+                }
+                else if (this.soy(ganador)){
                     vista.mostrarMensaje("GANASTE!!!");
-                    vista.mensajeFinal(modelo.determinarGanador().getNombre());
-                    modelo.resultados();
+                    vista.mensajeFinal(ganador.getNombre());
                 }
                 else{
-                    vista.mostrarMensaje("El jugador " + modelo.determinarGanador().getNombre() + " gano la partida.");
+                    vista.mostrarMensaje("El jugador " + ganador.getNombre() + " ganó la partida.");
                 }
             }
             case DECISION -> {
-                if (modelo.getAnfitrion().equals(this.jugadorAsociado)){
-                    int opcion = vista.mensajeReiniciarJuego();
-                    this.manejarDesicion(opcion);
+                if (this.soy(this.modelo.getAnfitrion())){
+                    pedirDecisionFinal();
                 }
             }
 
@@ -496,9 +583,5 @@ public class PokerController implements IControladorRemoto {
     @Override
     public <T extends IObservableRemoto> void setModeloRemoto(T modeloRemoto) throws RemoteException {
         this.modelo = (IModelo) modeloRemoto; // es necesario castear el modelo remoto
-    }
-
-    public void registrarJugador(String nombre) throws RemoteException {
-        this.modelo.agregarJugador(nombre);
     }
 }

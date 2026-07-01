@@ -219,7 +219,7 @@ public class ManoTest {
         Carta carta6 = new Carta(CartaValor.Q, Pinta.CORAZON);
         Carta carta7 = new Carta(CartaValor.Q, Pinta.PICA);
         Carta carta8 = new Carta(CartaValor.Q, Pinta.DIAMANTE);
-        Carta carta9 = new Carta(CartaValor.DIEZ, Pinta.TREBOL);
+        Carta carta9 = new Carta(CartaValor.NUEVE, Pinta.TREBOL);
         Carta carta0 = new Carta(CartaValor.DIEZ, Pinta.PICA);
         ArrayList<Carta> cartas2 = new ArrayList<>();
 
@@ -232,7 +232,7 @@ public class ManoTest {
         mano2.setCartas(cartas2);
         mano2.definirMano();
 
-        assertEquals(mano1.evaluarMano(mano2),mano2);
+        assertEquals(mano1.compareTo(mano2),-1);
 
     }
 
