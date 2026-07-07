@@ -196,7 +196,7 @@ public class ManoTest {
         mano1.setCartas(cartas);
         mano1.definirMano();
 
-        assertEquals(mano1.getTipoDeMano(), TipoDeMano.CARTA_ALTA);
+        assertEquals(TipoDeMano.CARTA_ALTA, mano1.getTipoDeMano());
     }
 
     @Test
@@ -270,6 +270,44 @@ public class ManoTest {
 
 
         assertEquals(mano1.evaluarMano(mano2),mano1);
+    }
+
+    @Test
+    public void validarEmpateManos(){
+        Carta carta1 = new Carta(CartaValor.Q, Pinta.TREBOL);
+        Carta carta2 = new Carta(CartaValor.K, Pinta.CORAZON);
+        Carta carta3 = new Carta(CartaValor.TRES, Pinta.PICA);
+        Carta carta4 = new Carta(CartaValor.SEIS, Pinta.DIAMANTE);
+        Carta carta5 = new Carta(CartaValor.SIETE, Pinta.TREBOL);
+        ArrayList<Carta> cartas = new ArrayList<>();
+        cartas.add(carta1);
+        cartas.add(carta2);
+        cartas.add(carta3);
+        cartas.add(carta4);
+        cartas.add(carta5);
+        Mano mano1 = new Mano();
+        mano1.setCartas(cartas);
+        mano1.definirMano();
+
+        Carta carta10 = new Carta(CartaValor.K, Pinta.PICA);
+        Carta carta20 = new Carta(CartaValor.OCHO, Pinta.CORAZON);
+        Carta carta30 = new Carta(CartaValor.SEIS, Pinta.CORAZON);
+        Carta carta40 = new Carta(CartaValor.DIEZ, Pinta.TREBOL);
+        Carta carta50 = new Carta(CartaValor.DOS, Pinta.PICA);
+        ArrayList<Carta> cartas2 = new ArrayList<>();
+        cartas2.add(carta10);
+        cartas2.add(carta20);
+        cartas2.add(carta30);
+        cartas2.add(carta40);
+        cartas2.add(carta50);
+        Mano mano2 = new Mano();
+        mano2.setCartas(cartas2);
+        mano2.definirMano();
+
+        assertEquals(TipoDeMano.CARTA_ALTA,mano1.getTipoDeMano());
+        assertEquals(TipoDeMano.CARTA_ALTA,mano2.getTipoDeMano());
+        assertEquals(0,mano1.getTipoDeMano().compareTo(mano2.getTipoDeMano()));
+//        assertEquals(0,mano1.compareTo(mano2));
     }
 }
 

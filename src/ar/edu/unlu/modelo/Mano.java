@@ -256,178 +256,86 @@ public class Mano implements Comparable<Mano>, Serializable {
 
     @Override
     public int compareTo(Mano o) {
-        // comparo por el tipoDeMano y si no son iguales entonces retorno el resultado de la comparación
+        // defino las manos por si son nulas
+        this.definirMano();
+        o.definirMano();
+
+        // si los tipos de mano son distintos entonces retorno el resultado de la comparación
         int tipoComparacion = this.tipoDeMano.compareTo(o.getTipoDeMano());
-        if (tipoComparacion != 0) return tipoComparacion;
+        if (tipoComparacion != 0) {
+            return tipoComparacion;
+        }
 
-//        if (    this.tipoDeMano.equals(TipoDeMano.PAREJA) ||
-//                this.tipoDeMano.equals(TipoDeMano.DOBLE_PAREJA) ||
-//                this.tipoDeMano.equals(TipoDeMano.TRIO) ||
-//                this.tipoDeMano.equals(TipoDeMano.POKER)
-//        )
-//        {
-//            int miValor = this.obtenerValorDeMano();
-//            int suValor = o.obtenerValorDeMano();
-//
-//            if (miValor > suValor){
-//                return 1;
-//            }
-//            else{
-//                return -1;
-//            }
-//        }
-        // 2. Si no ordeno cartas de mayor a menor
-        List<Carta> thisCartas = new ArrayList<>(this.cartas);
-        List<Carta> otraCartas = new ArrayList<>(o.cartas);
-        Collections.sort(thisCartas, Comparator.reverseOrder());
-        Collections.sort(otraCartas, Comparator.reverseOrder());
-
-        // 3. Comparo carta por carta
-        for (int i = 0; i < thisCartas.size(); i++) {
-            int comparacionCarta = thisCartas.get(i).compareTo(otraCartas.get(i));
-            if (comparacionCarta != 0) {
-                return comparacionCarta;
+        // si son iguales entonces defino una lista con los valores ordinales CartaValor de ambas manos
+        List<Integer> misValores = valoresParaComparar();
+        List<Integer> otrosValores = o.valoresParaComparar();
+        // comparo mis valores con los suyos uno por uno y retorno la minima diferencia
+        for (int i = 0; i < misValores.size(); i++) {
+            int comparacion = Integer.compare(misValores.get(i), otrosValores.get(i));
+            if (comparacion != 0) {
+                return comparacion;
             }
         }
-        return 0; // Empate total (todas las cartas iguales)
+        // empate absoluto
+        return 0;
     }
+
+    private List<Integer> valoresParaComparar() {
+        List<Integer> resultado = new ArrayList<>();
+
+        if (tipoDeMano == TipoDeMano.POKER) {
+            resultado.addAll(valoresConRepeticiones(4)); // 4 cartas repetidas y 1 carta suelta...
+            resultado.addAll(valoresConRepeticiones(1));
+        }
+        else if (tipoDeMano == TipoDeMano.FULL_HOUSE) {
+            resultado.addAll(valoresConRepeticiones(3));
+            resultado.addAll(valoresConRepeticiones(2));
+        }
+        else if (tipoDeMano == TipoDeMano.TRIO) {
+            resultado.addAll(valoresConRepeticiones(3));
+            resultado.addAll(valoresConRepeticiones(1));
+        }
+        else if (tipoDeMano == TipoDeMano.DOBLE_PAREJA) {
+            resultado.addAll(valoresConRepeticiones(2));
+            resultado.addAll(valoresConRepeticiones(1));
+        }
+        else if (tipoDeMano == TipoDeMano.PAREJA) {
+            resultado.addAll(valoresConRepeticiones(2));
+            resultado.addAll(valoresConRepeticiones(1));
+        }
+        else {
+            resultado.addAll(valoresOrdenados());
+        }
+
+        return resultado;
+    }
+    private List<Integer> valoresConRepeticiones(int cantidad) {
+        List<Integer> resultado = new ArrayList<>();
+        // agrego a la lista "resultado" los valores ordinales de las cartas que se repitan "cantidad" de veces
+        for (Map.Entry<CartaValor, Integer> entrada : cartasRepetidas().entrySet()) {
+            if (entrada.getValue() == cantidad) {
+                resultado.add(entrada.getKey().ordinal());
+            }
+        }
+        // retorno la lista ordenada
+        resultado.sort(Comparator.reverseOrder());
+        return resultado;
+    }
+    private List<Integer> valoresOrdenados() {
+        List<Integer> resultado = new ArrayList<>();
+
+        for (Carta carta : cartas) {
+            resultado.add(carta.getValor().ordinal());
+        }
+
+        resultado.sort(Comparator.reverseOrder());
+        return resultado;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(cartas, tipoDeMano);
     }
-
-    private int valorTotalCartas() {
-        if (this.tipoDeMano == TipoDeMano.PAREJA || this.tipoDeMano == TipoDeMano.DOBLE_PAREJA || this.tipoDeMano == TipoDeMano.TRIO || this.tipoDeMano == TipoDeMano.POKER) {
-            // Si es un tipoDeMano con cartas repetidas entonces se obtiene el valor ordinal de una de las cartas repetidas.
-            return obtenerValorDeMano();
-        } else {
-            // Para el resto de manos (como Escalera, Escalera Color, etc.), suma los valores totales.
-            int suma = 0;
-            for (Carta c : cartas) {
-                suma += c.getValor().ordinal();
-            }
-            return suma;
-        }
-    }
-
-
-    private int obtenerValorDeMano() {
-        // Dependiendo el tipo de mano, voy a devolver el valor más relevante
-        switch (this.tipoDeMano) {
-            case PAREJA:
-                // Devuelve el valor de la carta que forma la pareja
-                return obtenerValorDeManoPareja();
-
-            case DOBLE_PAREJA:
-                // Devuelve el valor de la carta más alta de las parejas
-                List<Carta> parejas = valorRepetidas(2); // Cartas con el mismo valor
-                return Math.max(parejas.get(0).getValor().ordinal(), parejas.get(1).getValor().ordinal());
-
-            case TRIO:
-                // Devuelve el valor de la carta que forma el trío
-                return obtenerValorDeManoTrio();
-
-            case POKER:
-                // Devuelve el valor de la carta que forma el poker
-                return obtenerValorDeManoPoker();
-
-            // incognita (?)
-            case ESCALERA:
-            case ESCALERA_COLOR:
-            case FULL_HOUSE:
-            case COLOR:
-                // Si es una mano con varias cartas en orden, devuelve la carta más alta
-                // Para una escalera o escalera color, será la carta más alta
-                return valorCartaOrdinal(0); // Devuelve la carta más alta en estos casos
-
-            default:
-                // Para otras manos, simplemente devolvemos el valor de la carta más alta
-                return valorCartaOrdinal(0); // Carta más alta si no es una pareja, trío, etc.
-        }
-    }
-
-    private int obtenerValorDeManoPareja() {
-        // Obtengo las cartas que tienen el mismo valor
-        List<Carta> pareja = valorRepetidas(2); // 2 cartas con el mismo valor
-
-        // Si encuentra una pareja entonces devuelvo el valor de una de las cartas.
-        if (!pareja.isEmpty()) {
-            return pareja.get(0).getValor().ordinal(); // Devuelve el valor de la carta de la pareja
-        }
-
-        // en caso de no encontrar nada retornara -1
-        return -1;
-    }
-
-    private int obtenerValorDeManoPoker() {
-        // Obtengo las cartas que tienen el mismo valor
-        List<Carta> poker = valorRepetidas(4); // 4 cartas con el mismo valor
-
-        // Si encuentra poker entonces devuelvo el valor de una de las cartas.
-        if (!poker.isEmpty()) {
-            return poker.get(0).getValor().ordinal(); // Devuelve el valor de la carta que forma poker
-        }
-
-        // en caso de no encontrar nada retornara -1
-        return -1;
-    }
-
-    private int obtenerValorDeManoTrio() {
-        // Obtengo las cartas que tienen el mismo valor
-        List<Carta> trio = valorRepetidas(3); // 3 cartas con el mismo valor
-
-        // Si encuentra un trio entonces devuelvo el valor de una de las cartas.
-        if (!trio.isEmpty()) {
-            return trio.get(0).getValor().ordinal(); // Devuelve el valor de la carta del trio
-        }
-
-        // en caso de no encontrar nada retornara -1
-        return -1;
-    }
-
-    private int valorCartaOrdinal(int indice) {
-        // Ordena las cartas y devuelve la carta de valor más alto según la cantidad que esté buscando
-        List<Carta> cartasOrdenadas = new ArrayList<>(this.cartas);
-        // para ordenar las cartas creo el comparador como clase anónima (como en el caso del ActionListener con ActionPerformed)
-        // lo ordeno de forma descendente.
-        Collections.sort(cartasOrdenadas, new Comparator<Carta>() {
-            @Override
-            public int compare(Carta c1, Carta c2) {
-                return c2.getValor().ordinal() - c1.getValor().ordinal();
-            }
-        });
-
-        // Si la mano tiene varias cartas iguales, seleccionamos la que corresponde a la cantidad
-        return cartasOrdenadas.get(indice).getValor().ordinal();
-    }
-
-
-    private List<Carta> valorRepetidas(int cantidad) {
-        // Busca y devuelve las cartas que tienen el mismo valor (parejas, tríos, etc.)
-        Map<CartaValor, List<Carta>> valorCartas = new HashMap<>();
-
-        // si no existe una lista asociada a la clave CartaValor entonces se le asocia una nueva lista con esas cartas.
-        for (Carta carta : this.cartas) {
-            // Verificamos si la clave (carta.getValor()) ya existe en el mapa
-            if (!valorCartas.containsKey(carta.getValor())) {
-                // Si no existe, agregamos una nueva entrada con un ArrayList vacío
-                valorCartas.put(carta.getValor(), new ArrayList<>());
-            }
-            // Agregamos la carta al ArrayList correspondiente a la clave
-            valorCartas.get(carta.getValor()).add(carta);
-        }
-
-        // Filtramos para obtener las cartas que tienen la cantidad que necesitamos (por ejemplo, 2 para una pareja)
-        // entrySet() devuelve un conjunto del tipo Map.Entry que representa una entrada del mapa, una relación clave valor.
-        // Map.Entry representa una entrada del mapa, por lo que se puede acceder al valor con getValue(), o a la clave con getKey()
-        for (Map.Entry<CartaValor, List<Carta>> entry : valorCartas.entrySet()) {
-            if (entry.getValue().size() == cantidad) {  // si las cartas repetidas son igual a la cantidad
-                return entry.getValue();    // entonces retorno la lista que está en valor.
-            }
-        }
-        return Collections.emptyList(); // Si no se encuentra la cantidad esperada de cartas devuelve una lista vacía inmutable.
-    }
-
 
     public void agregarCarta(Carta carta){
         cartas.add(carta);
@@ -435,10 +343,6 @@ public class Mano implements Comparable<Mano>, Serializable {
 
     public ArrayList<Carta> getCartas() {
         return cartas;
-    }
-
-    public int getValorMano() {
-        return valorMano;
     }
 
     public TipoDeMano getTipoDeMano() {
