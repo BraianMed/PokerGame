@@ -254,30 +254,68 @@ public class Mano implements Comparable<Mano>, Serializable {
         return cartas.equals(mano.cartas) && Objects.equals(tipoDeMano, mano.tipoDeMano);
     }
 
+//    @Override
+//    public int compareTo(Mano o) {
+//        // defino las manos por si son nulas
+//        this.definirMano();
+//        o.definirMano();
+//
+//        // si los tipos de mano son distintos entonces retorno el resultado de la comparación
+//        int tipoComparacion = this.tipoDeMano.compareTo(o.getTipoDeMano());
+//        if (tipoComparacion != 0) {
+//            return tipoComparacion;
+//        }
+//
+//        // si son iguales entonces defino una lista con los valores ordinales CartaValor de ambas manos
+//        List<Integer> misValores = valoresParaComparar();
+//        List<Integer> otrosValores = o.valoresParaComparar();
+//        // comparo mis valores con los suyos uno por uno y retorno la minima diferencia
+//        for (int i = 0; i < misValores.size(); i++) {
+//            int comparacion = Integer.compare(misValores.get(i), otrosValores.get(i));
+//            if (comparacion != 0) {
+//                return comparacion;
+//            }
+//        }
+//        // empate absoluto
+//        return 0;
+//    }
+
     @Override
     public int compareTo(Mano o) {
-        // defino las manos por si son nulas
-        this.definirMano();
-        o.definirMano();
-
-        // si los tipos de mano son distintos entonces retorno el resultado de la comparación
+        // comparo por el tipoDeMano y si no son iguales entonces retorno el resultado de la comparación
         int tipoComparacion = this.tipoDeMano.compareTo(o.getTipoDeMano());
-        if (tipoComparacion != 0) {
-            return tipoComparacion;
-        }
+        if (tipoComparacion != 0) return tipoComparacion;
 
-        // si son iguales entonces defino una lista con los valores ordinales CartaValor de ambas manos
-        List<Integer> misValores = valoresParaComparar();
-        List<Integer> otrosValores = o.valoresParaComparar();
-        // comparo mis valores con los suyos uno por uno y retorno la minima diferencia
-        for (int i = 0; i < misValores.size(); i++) {
-            int comparacion = Integer.compare(misValores.get(i), otrosValores.get(i));
-            if (comparacion != 0) {
-                return comparacion;
+//        if (    this.tipoDeMano.equals(TipoDeMano.PAREJA) ||
+//                this.tipoDeMano.equals(TipoDeMano.DOBLE_PAREJA) ||
+//                this.tipoDeMano.equals(TipoDeMano.TRIO) ||
+//                this.tipoDeMano.equals(TipoDeMano.POKER)
+//        )
+//        {
+//            int miValor = this.obtenerValorDeMano();
+//            int suValor = o.obtenerValorDeMano();
+//
+//            if (miValor > suValor){
+//                return 1;
+//            }
+//            else{
+//                return -1;
+//            }
+//        }
+        // 2. Si no ordeno cartas de mayor a menor
+        List<Carta> thisCartas = new ArrayList<>(this.cartas);
+        List<Carta> otraCartas = new ArrayList<>(o.cartas);
+        Collections.sort(thisCartas, Comparator.reverseOrder());
+        Collections.sort(otraCartas, Comparator.reverseOrder());
+
+        // 3. Comparo carta por carta
+        for (int i = 0; i < thisCartas.size(); i++) {
+            int comparacionCarta = thisCartas.get(i).compareTo(otraCartas.get(i));
+            if (comparacionCarta != 0) {
+                return comparacionCarta;
             }
         }
-        // empate absoluto
-        return 0;
+        return 0; // Empate total (todas las cartas iguales)
     }
 
     private List<Integer> valoresParaComparar() {
